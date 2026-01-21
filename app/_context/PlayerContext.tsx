@@ -7,6 +7,8 @@ interface Track {
   mbid: string
   title: string
   artist: string
+  artistId?: string
+  releaseId?: string
   duration: number | null
   coverArtUrl: string | null
 }
@@ -22,6 +24,7 @@ interface PlayerContextType {
   isFullScreen: boolean
   currentTime: number
   duration: number
+  isLoading: boolean
   play: (track?: Track) => void
   pause: () => void
   togglePlay: () => void
@@ -53,6 +56,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const isSeeking = useRef(false)
@@ -164,6 +168,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setCurrentTrack(track)
       setCurrentTime(0)
       setDuration(track.duration || 0)
+      setIsLoading(true)
       
       // Pause and reset before changing src to avoid errors
       audioRef.current.pause()
@@ -332,6 +337,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     next()
   }, [next])
 
+  const handleWaiting = useCallback(() => {
+    setIsLoading(true)
+  }, [])
+
+  const handleCanPlay = useCallback(() => {
+    setIsLoading(false)
+  }, [])
+
+  const handleError = useCallback(() => {
+    setIsLoading(false)
+  }, [])
+
   // Attach event listeners
   useEffect(() => {
     const audio = audioRef.current
@@ -340,13 +357,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('waiting', handleWaiting)
+    audio.addEventListener('playing', handleCanPlay)
+    audio.addEventListener('canplay', handleCanPlay)
+    audio.addEventListener('error', handleError)
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('waiting', handleWaiting)
+      audio.removeEventListener('playing', handleCanPlay)
+      audio.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('error', handleError)
     }
-  }, [handleTimeUpdate, handleLoadedMetadata, handleEnded])
+  }, [handleTimeUpdate, handleLoadedMetadata, handleEnded, handleWaiting, handleCanPlay, handleError])
 
   // Preload next tracks when queue changes
   useEffect(() => {
@@ -358,7 +383,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   return (
     <PlayerContext.Provider value={{
       currentTrack, isPlaying, queue, history, volume, loopMode, isRandom, isFullScreen,
-      currentTime, duration,
+      currentTime, duration, isLoading,
       play, pause, togglePlay, next, previous, seek, setQueue, addToQueue, removeFromQueue,
       changeQueueOrder, goTo, setVolume, setLoopMode, toggleRandom, setIsFullScreen, preloadQueue
     }}>

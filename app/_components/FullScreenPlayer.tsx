@@ -2,16 +2,17 @@
 
 import { 
   Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, 
-  ChevronDown, ListMusic, Repeat1, Volume2
+  ChevronDown, ListMusic, Repeat1, Volume2, Loader2
 } from 'lucide-react'
 import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
+import Link from 'next/link'
 
 export function FullScreenPlayer() {
   const { 
     currentTrack, isPlaying, togglePlay, next, previous, 
     volume, setVolume, loopMode, setLoopMode, isRandom, toggleRandom,
-    currentTime, duration, seek, isFullScreen, setIsFullScreen
+    currentTime, duration, seek, isFullScreen, setIsFullScreen, isLoading
   } = usePlayer()
 
   if (!currentTrack) return null
@@ -69,7 +70,11 @@ export function FullScreenPlayer() {
       {/* Album Art */}
       <div className="flex-1 flex items-center justify-center mb-8">
         <div className="w-full max-w-[400px] aspect-square bg-zinc-800 rounded-lg shadow-2xl overflow-hidden">
-          {currentTrack.coverArtUrl ? (
+          {isLoading ? (
+            <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+              <Loader2 size={80} className="text-white animate-spin" />
+            </div>
+          ) : currentTrack.coverArtUrl ? (
             <img 
               src={currentTrack.coverArtUrl}
               alt={currentTrack.title} 
@@ -85,8 +90,29 @@ export function FullScreenPlayer() {
 
       {/* Track Info */}
       <div className="max-w-2xl mx-auto w-full mb-8">
-        <div className="text-2xl lg:text-3xl font-bold mb-2">{currentTrack.title}</div>
-        <div className="text-zinc-400 text-lg lg:text-xl">{currentTrack.artist}</div>
+        {currentTrack.releaseId ? (
+          <Link 
+            href={`/release/${currentTrack.releaseId}`}
+            className="text-2xl lg:text-3xl font-bold mb-2 hover:underline block"
+            onClick={() => setIsFullScreen(false)}
+          >
+            {currentTrack.title}
+          </Link>
+        ) : (
+          <div className="text-2xl lg:text-3xl font-bold mb-2">{currentTrack.title}</div>
+        )}
+        
+        {currentTrack.artistId ? (
+          <Link 
+            href={`/artist/${currentTrack.artistId}`}
+            className="text-zinc-400 text-lg lg:text-xl hover:text-white hover:underline block"
+            onClick={() => setIsFullScreen(false)}
+          >
+            {currentTrack.artist}
+          </Link>
+        ) : (
+          <div className="text-zinc-400 text-lg lg:text-xl">{currentTrack.artist}</div>
+        )}
       </div>
 
       {/* Progress Bar */}

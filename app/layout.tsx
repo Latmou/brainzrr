@@ -44,7 +44,7 @@ export default function RootLayout({
             <Sidebar className="order-last lg:order-first" />
             <main className="flex-1 bg-zinc-900 lg:rounded-lg lg:my-2 lg:mr-2 overflow-y-auto relative min-h-0">
               <div className="absolute inset-0 bg-gradient-to-b from-zinc-800/50 to-zinc-900 pointer-events-none h-64" />
-              <div className="relative z-10 p-6">
+              <div className="relative z-10 lg:p-6">
                 {children}
               </div>
             </main>

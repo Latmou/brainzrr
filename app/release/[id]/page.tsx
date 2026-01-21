@@ -1,7 +1,8 @@
 import { musicBrainzService } from '@/app/_lib/musicbrainz'
-import { Music, Calendar, User } from 'lucide-react'
+import { Calendar, User } from 'lucide-react'
 import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
+import { ReleaseArt } from '@/app/_components/ReleaseArt'
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -19,36 +20,39 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
     mbid: track.recording.id,
     title: track.title,
     artist: track['artist-credit']?.[0]?.name || artistName,
+    artistId: track['artist-credit']?.[0]?.artist?.id || release['artist-credit']?.[0]?.artist?.id,
+    releaseId: id,
     duration: track.recording.length ? track.recording.length / 1000 : null,
     coverArtUrl: coverArtUrl ?? null
   }))
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-4 md:p-0">
       {/* Header */}
-      <div className="flex items-end gap-6">
-        <div className="w-64 h-64 bg-zinc-800 rounded shadow-2xl flex items-center justify-center flex-shrink-0 overflow-hidden relative">
-          {release['cover-art-url'] ? (
-            <img 
-              src={release['cover-art-url']} 
-              alt={release.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <Music size={120} className="text-zinc-500" />
-          )}
-        </div>
-        <div>
-          <span className="text-sm font-bold uppercase">{release.status || 'Release'}</span>
-          <h1 className="text-7xl font-black mt-2 mb-6">{release.title}</h1>
-          <div className="flex items-center gap-2 text-sm">
-            <User size={16} className="text-zinc-400" />
-            <Link href={`/artist/${release['artist-credit']?.[0]?.artist?.id}`} className="font-bold hover:underline">
-              {artistName}
-            </Link>
+      <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
+        <ReleaseArt 
+          releaseId={id} 
+          title={release.title} 
+          className="w-48 h-48 md:w-64 md:h-64 rounded shadow-2xl flex-shrink-0"
+          fallbackSize={80}
+        />
+        <div className="flex flex-col items-center md:items-start w-full min-w-0">
+          <h1 className="text-3xl md:text-5xl lg:text-7xl font-black mt-2 leading-tight break-words w-full">
+            {release.title}
+          </h1>
+          <div className="text-xs font-bold italic mb-4 md:mb-6 ">"{release.disambiguation}"</div>
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-2 gap-y-1 text-sm">
+            <div className="flex items-center gap-1">
+              <User size={16} className="text-zinc-400" />
+              <Link href={`/artist/${release['artist-credit']?.[0]?.artist?.id}`} className="font-bold hover:underline">
+                {artistName}
+              </Link>
+            </div>
             <span className="text-zinc-400">•</span>
-            <Calendar size={16} className="text-zinc-400" />
-            <span className="text-zinc-400">{new Date(releaseDate).getFullYear() || releaseDate}</span>
+            <div className="flex items-center gap-1">
+              <Calendar size={16} className="text-zinc-400" />
+              <span className="text-zinc-400">{new Date(releaseDate).toLocaleDateString('fr-FR') || releaseDate}</span>
+            </div>
             <span className="text-zinc-400">•</span>
             <span className="text-zinc-400">{tracks.length} titres</span>
           </div>
@@ -73,12 +77,16 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
               }}
               index={index}
               artistName={artistName}
+              artistId={release['artist-credit']?.[0]?.artist?.id}
+              releaseId={id}
               coverArtUrl={coverArtUrl}
               fullTracklist={fullTracklist}
             />
           ))}
         </div>
       </section>
+
+      <pre className={'text-xs'}>{JSON.stringify(release, null, 2)}</pre>
     </div>
   )
 }

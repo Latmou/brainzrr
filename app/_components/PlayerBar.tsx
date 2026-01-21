@@ -2,16 +2,17 @@
 
 import { 
   Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, 
-  Volume2, ListMusic, Repeat1
+  Volume2, ListMusic, Repeat1, Loader2
 } from 'lucide-react'
 import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
+import Link from 'next/link'
 
 export function PlayerBar({ className }: { className?: string }) {
   const { 
     currentTrack, isPlaying, togglePlay, next, previous, 
     volume, setVolume, loopMode, setLoopMode, isRandom, toggleRandom,
-    currentTime, duration, seek, setIsFullScreen
+    currentTime, duration, seek, setIsFullScreen, isLoading
   } = usePlayer()
 
   const formatTime = (time: number) => {
@@ -63,7 +64,11 @@ export function PlayerBar({ className }: { className?: string }) {
         {currentTrack ? (
           <>
             <div className="w-12 h-12 lg:w-14 lg:h-14 bg-zinc-800 rounded flex-shrink-0 overflow-hidden relative">
-               {currentTrack.coverArtUrl ? (
+               {isLoading ? (
+                 <div className="w-full h-full flex items-center justify-center bg-zinc-800">
+                    <Loader2 size={24} className="text-white animate-spin" />
+                 </div>
+               ) : currentTrack.coverArtUrl ? (
                  <img 
                    src={currentTrack.coverArtUrl}
                    alt={currentTrack.title} 
@@ -76,12 +81,33 @@ export function PlayerBar({ className }: { className?: string }) {
                )}
             </div>
             <div className="overflow-hidden">
-              <div className="text-white text-sm font-semibold truncate hover:underline cursor-pointer">
-                {currentTrack.title}
-              </div>
-              <div className="text-zinc-400 text-xs hover:text-white hover:underline cursor-pointer truncate">
-                {currentTrack.artist}
-              </div>
+              {currentTrack.releaseId ? (
+                <Link 
+                  href={`/release/${currentTrack.releaseId}`}
+                  className="text-white text-sm font-semibold truncate hover:underline block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {currentTrack.title}
+                </Link>
+              ) : (
+                <div className="text-white text-sm font-semibold truncate">
+                  {currentTrack.title}
+                </div>
+              )}
+              
+              {currentTrack.artistId ? (
+                <Link 
+                  href={`/artist/${currentTrack.artistId}`}
+                  className="text-zinc-400 text-xs hover:text-white hover:underline truncate block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {currentTrack.artist}
+                </Link>
+              ) : (
+                <div className="text-zinc-400 text-xs truncate">
+                  {currentTrack.artist}
+                </div>
+              )}
             </div>
           </>
         ) : (

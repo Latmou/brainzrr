@@ -9,6 +9,8 @@ interface Track {
   mbid: string
   title: string
   artist: string
+  artistId?: string
+  releaseId?: string
   duration: number | null
   coverArtUrl: string | null
 }
@@ -16,15 +18,18 @@ interface Track {
 interface RecordingItemProps {
   recording: RecordingDetail
   artistName?: string // Used as fallback or if not present in recording
+  artistId?: string
+  releaseId?: string
   index?: number
   showIndex?: boolean
   coverArtUrl?: string | null
   fullTracklist?: Track[]
 }
 
-export function RecordingItem({ recording, artistName, index, showIndex = true, coverArtUrl, fullTracklist }: RecordingItemProps) {
+export function RecordingItem({ recording, artistName, artistId, releaseId, index, showIndex = true, coverArtUrl, fullTracklist }: RecordingItemProps) {
   const { play, pause, isPlaying, currentTrack, setQueue } = usePlayer()
   const displayArtist = recording['artist-credit']?.[0]?.name || artistName || 'Artiste inconnu'
+  const displayArtistId = recording['artist-credit']?.[0]?.artist?.id || artistId
   
   const isCurrentTrack = currentTrack?.mbid === recording.id
   const isThisPlaying = isCurrentTrack && isPlaying
@@ -33,11 +38,13 @@ export function RecordingItem({ recording, artistName, index, showIndex = true, 
     if (isThisPlaying) {
       pause()
     } else {
-      const trackToPlay = {
+      const trackToPlay: Track = {
         id: recording.id,
         mbid: recording.id,
         title: recording.title,
         artist: displayArtist,
+        artistId: displayArtistId,
+        releaseId: releaseId,
         duration: recording.length ? recording.length / 1000 : null,
         coverArtUrl: coverArtUrl ?? null
       }

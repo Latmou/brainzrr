@@ -49,7 +49,7 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 p-4 md:p-0">
       <form onSubmit={handleSearch} className="relative max-w-md">
         <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
         <input
@@ -107,6 +107,8 @@ export default function SearchPage() {
                     key={recording.id} 
                     recording={recording} 
                     showIndex={false} 
+                    artistId={recording['artist-credit']?.[0]?.artist?.id}
+                    releaseId={recording.releases?.[0]?.id}
                     coverArtUrl={recording.releases?.[0]?.id ? `https://coverartarchive.org/release/${recording.releases[0].id}/front-250` : undefined}
                   />
                 ))}
