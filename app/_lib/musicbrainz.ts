@@ -57,7 +57,7 @@ export const musicBrainzService = {
   },
 
   async getRelease(mbid: string) {
-    const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings'].join('+') });
+    const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings', 'labels'].join('+') });
     release['cover-art-url'] = await musicBrainzService.getReleaseArt(release.id)
     return release as Release;
   },
@@ -83,7 +83,7 @@ export const musicBrainzService = {
   },
 
   async getRecording(mbid: string) {
-    return (await fetchMB(`recording/${mbid}`,  { inc: ['artist-credits'].join('+') }) as RecordingDetail);
+    return (await fetchMB(`recording/${mbid}`,  { inc: ['artist-credits', 'labels'].join('+') }) as RecordingDetail);
   },
 
   async searchArea(query: string) {

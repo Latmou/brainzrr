@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search as SearchIcon, User, Plus } from 'lucide-react'
 import { musicBrainzService } from '@/app/_lib/musicbrainz'
 import Link from 'next/link'
-import { addToLibrary as addToLibraryAction } from '@/app/_actions/library'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseItem } from '@/app/_components/ReleaseItem'
 
@@ -12,6 +11,33 @@ export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<any>({ artists: [], recordings: [], releases: [] })
   const [isLoading, setIsLoading] = useState(false)
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const savedQuery = localStorage.getItem('search_query')
+    const savedResults = localStorage.getItem('search_results')
+
+    if (savedQuery) {
+      setQuery(savedQuery)
+    }
+    if (savedResults) {
+      try {
+        setResults(JSON.parse(savedResults))
+      } catch (e) {
+        console.error('Failed to parse saved search results', e)
+      }
+    }
+  }, [])
+
+  // Save to localStorage when query or results change
+  useEffect(() => {
+    if (query) {
+      localStorage.setItem('search_query', query)
+    }
+    if (results.artists.length > 0 || results.recordings.length > 0 || results.releases.length > 0) {
+      localStorage.setItem('search_results', JSON.stringify(results))
+    }
+  }, [query, results])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,19 +58,6 @@ export default function SearchPage() {
       console.error('Search error:', error)
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const addToLibrary = async (type: 'artist', item: any) => {
-    try {
-      await addToLibraryAction({
-        type,
-        mbid: item.id,
-        name: item.name,
-      })
-      alert(`Artiste ajouté à la bibliothèque`)
-    } catch (error) {
-      console.error('Error adding to library:', error)
     }
   }
 
@@ -76,12 +89,7 @@ export default function SearchPage() {
                     href={`/artist/${artist.id}`}
                     className="bg-zinc-800/40 p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer relative"
                   >
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        addToLibrary('artist', artist)
-                      }}
+                    <button
                       className="absolute right-6 top-6 bg-green-500 rounded-full p-2 text-black opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
                     >
                       <Plus size={20} />

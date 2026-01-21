@@ -73,6 +73,21 @@ export type Media = {
   tracks?: Track[];
 };
 
+export type Label = {
+  id: string;
+  name: string;
+  'sort-name': string;
+  type?: string;
+  'type-id'?: string;
+  disambiguation?: string;
+  'label-code'?: number | null;
+};
+
+export type LabelInfo = {
+  'catalog-number': string;
+  label: Label;
+};
+
 export type Release = {
   id: string;
   title: string;
@@ -92,4 +107,5 @@ export type Release = {
   'release-events'?: ReleaseEvent[];
   media?: Media[];
   'cover-art-url'?: string | null;
+  'label-info'?: LabelInfo[];
 };

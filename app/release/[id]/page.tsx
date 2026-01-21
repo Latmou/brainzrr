@@ -1,5 +1,5 @@
 import { musicBrainzService } from '@/app/_lib/musicbrainz'
-import { Calendar, User } from 'lucide-react'
+import { Calendar, User, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseArt } from '@/app/_components/ReleaseArt'
@@ -40,7 +40,18 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
           <h1 className="text-3xl md:text-5xl lg:text-7xl font-black mt-2 leading-tight break-words w-full">
             {release.title}
           </h1>
-          <div className="text-xs font-bold italic mb-4 md:mb-6 ">"{release.disambiguation}"</div>
+          <div className={'mb-4 md:mb-6 gap-2 text-zinc-400 text-xs'}>
+            {release['label-info'] && release['label-info'].length > 0 && (
+              release['label-info'].map((info, index) => (
+                <span key={info.label?.id || index}>
+                  <Tag size={10} className={'inline'}/>&nbsp;
+                  {info.label?.name}
+                </span>
+              ))
+            )}
+            {release.disambiguation && <span className="italic"> • "{release.disambiguation}"</span>}
+
+          </div>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-2 gap-y-1 text-sm">
             <div className="flex items-center gap-1">
               <User size={16} className="text-zinc-400" />
