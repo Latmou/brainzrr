@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Artist {
+  id       String   @id @default(uuid())
+  mbid     String   @unique
+  name     String
+  imageUrl String?
+  addedAt  DateTime @default(now())
+}
+
+model Track {
+  id        String   @id @default(uuid())
+  mbid      String   @unique
+  title     String
+  artist    String
+  duration  Int? // seconds
+  youtubeId String?
+  addedAt   DateTime @default(now())
+}
+
+model Queue {
+  id      String  @id @default(uuid())
+  trackId String
+  order   Int
+  played  Boolean @default(false)
+}
