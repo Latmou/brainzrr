@@ -45,8 +45,8 @@ export const wikipediaService = {
     const title = await this.searchArtist(artistName, lang);
     if (title) {
       const summary = await this.getSummary(title, lang);
-      if (summary?.thumbnail?.source) {
-        return summary.thumbnail.source;
+      if ((summary?.extract as string | undefined | null)?.includes(artistName)) {
+        return summary?.thumbnail?.source || null;
       }
     }
     
@@ -54,7 +54,9 @@ export const wikipediaService = {
       const enTitle = await this.searchArtist(artistName, 'en');
       if (enTitle) {
         const summary = await this.getSummary(enTitle, 'en');
-        return summary?.thumbnail?.source || null;
+        if ((summary?.extract as string | undefined | null)?.includes(artistName)) {
+          return summary?.thumbnail?.source || null;
+        }
       }
     }
     return null;
@@ -63,13 +65,19 @@ export const wikipediaService = {
   async getArtistDescription(artistName: string, lang = 'fr') {
     const title = await this.searchArtist(artistName, lang);
     if (title) {
-      return this.getExtract(title, lang);
+      const extract = await this.getExtract(title, lang);
+      if ((extract as string | undefined | null)?.includes(artistName)) {
+        return extract
+      }
     }
     // If French fails, try English
     if (lang !== 'en') {
       const enTitle = await this.searchArtist(artistName, 'en');
       if (enTitle) {
-        return this.getExtract(enTitle, 'en');
+        const extract = await this.getExtract(title, 'en');
+        if ((extract as string | undefined | null)?.includes(artistName)) {
+          return extract
+        }
       }
     }
     return null;

@@ -32,6 +32,7 @@ export function RecordingItem({ recording, artistName, artistId, releaseId, inde
 
   const displayArtist = recording['artist-credit']?.[0]?.name || artistName || 'Artiste inconnu'
   const displayArtistId = recording['artist-credit']?.[0]?.artist?.id || artistId
+  const displayReleaseId = releaseId || recording.releases?.[0]?.id
   
   const isCurrentTrack = currentTrack?.mbid === recording.id
   const isThisPlaying = isCurrentTrack && isPlaying
@@ -46,9 +47,9 @@ export function RecordingItem({ recording, artistName, artistId, releaseId, inde
         title: recording.title,
         artist: displayArtist,
         artistId: displayArtistId,
-        releaseId: releaseId,
+        releaseId: displayReleaseId,
         duration: recording.length ? recording.length / 1000 : null,
-        coverArtUrl: coverArtUrl ?? null
+        coverArtUrl: coverArtUrl ?? (displayReleaseId ? `https://coverartarchive.org/release/${displayReleaseId}/front-250` : null)
       }
 
       play(trackToPlay)

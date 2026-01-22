@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, Search, Library, PlusCircle, Settings } from 'lucide-react'
+import { Home, Search, Settings } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/app/_lib/utils'
 
@@ -11,7 +11,6 @@ export function Sidebar({ className }: { className?: string }) {
   const navItems = [
     { icon: Home, label: 'Accueil', href: '/' },
     { icon: Search, label: 'Rechercher', href: '/search' },
-    { icon: Library, label: 'Bibliothèque', href: '/library' },
     { icon: Settings, label: 'Paramètres', href: '/settings' },
   ]
 
@@ -33,20 +32,8 @@ export function Sidebar({ className }: { className?: string }) {
         ))}
       </div>
       
-      <div className="bg-zinc-900 rounded-lg p-4 flex-1 hidden lg:flex flex-col gap-4 overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 hover:text-white transition-colors font-semibold">
-            <Library size={24} />
-            Votre bibliothèque
-          </div>
-          <button className="hover:text-white transition-colors">
-            <PlusCircle size={20} />
-          </button>
-        </div>
-        <div className="overflow-y-auto">
-          {/* Liste des artistes enregistrés viendra ici */}
-          <div className="text-sm py-2">Vos artistes s'afficheront ici.</div>
-        </div>
+      <div className="bg-zinc-900 rounded-lg p-4 flex-1 hidden lg:flex flex-col gap-4 overflow-hidden text-zinc-500 italic text-sm">
+        Les fonctionnalités de bibliothèque ont été retirées.
       </div>
     </div>
   )

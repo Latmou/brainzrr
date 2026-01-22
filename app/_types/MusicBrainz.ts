@@ -118,6 +118,7 @@ export type RecordingDetail = {
   video?: boolean;
   'artist-credit'?: ArtistCredit[];
   'first-release-date'?: string;
+  releases?: Release[];
 };
 
 export type Track = {

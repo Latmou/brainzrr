@@ -9,27 +9,23 @@ datasource db {
   provider = "postgresql"
 }
 
-model Artist {
-  id       String   @id @default(uuid())
-  mbid     String   @unique
-  name     String
-  imageUrl String?
-  addedAt  DateTime @default(now())
-}
-
-model Track {
-  id        String   @id @default(uuid())
-  mbid      String   @unique
+model Recording {
+  mbid      String   @id
   title     String
   artist    String
-  duration  Int? // seconds
-  youtubeId String?
+  releaseId String?
+  duration  Int? // milliseconds
+  data      Json // Store full MB response
   addedAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model Queue {
-  id      String  @id @default(uuid())
-  trackId String
-  order   Int
-  played  Boolean @default(false)
+model Release {
+  mbid        String   @id
+  title       String
+  artist      String
+  coverArtUrl String?
+  data        Json // Store full MB response
+  addedAt     DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

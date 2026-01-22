@@ -9,6 +9,7 @@ import { cn } from '@/app/_lib/utils'
 import Link from 'next/link'
 import { ReleaseArt } from './ReleaseArt'
 import { Slider } from './Slider'
+import Image from 'next/image'
 
 export function PlayerBar({ className }: { className?: string }) {
   const { 
@@ -45,6 +46,15 @@ export function PlayerBar({ className }: { className?: string }) {
                  <div className="w-full h-full flex items-center justify-center bg-zinc-800">
                     <Loader2 size={24} className="text-white animate-spin" />
                  </div>
+               ) : currentTrack.coverArtUrl ? (
+                  <Image
+                    src={currentTrack.coverArtUrl}
+                    width={56}
+                    height={56}
+                    alt={currentTrack.title}
+                    className="w-full h-full object-cover"
+                    unoptimized={currentTrack.coverArtUrl.includes('coverartarchive.org')}
+                  />
                ) : currentTrack.releaseId ? (
                  <ReleaseArt 
                     releaseId={currentTrack.releaseId} 
