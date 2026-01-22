@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Play, Loader2 } from 'lucide-react'
 import { ReleaseArt } from './ReleaseArt'
-import {Release} from "@/app/_types/MusicBrainz";
+import {Release, RecordingDetail} from "@/app/_types/MusicBrainz";
 import {usePlayer} from "@/app/_context/PlayerContext";
 import {getReleaseAction} from "@/app/_actions/musicbrainz";
 import {useState} from "react";
@@ -39,22 +39,18 @@ export function ReleaseItem({ release, artistName: artistNameProp }: ReleaseItem
       }
 
       const tracks = fullRelease.media?.[0]?.tracks || []
-      const coverArtUrl = fullRelease['cover-art-url']
-
-      const fullTracklist = tracks.map((track: any) => ({
-        id: track.id,
-        mbid: track.recording.id,
+      
+      const fullTracklist: RecordingDetail[] = tracks.map((track: any) => ({
+        ...track.recording,
         title: track.title,
-        artist: track['artist-credit']?.[0]?.name || artistName || 'Unknown Artist',
-        artistId: track['artist-credit']?.[0]?.artist?.id || fullRelease['artist-credit']?.[0]?.artist?.id,
-        releaseId: releaseId,
-        duration: track.recording.length ? track.recording.length / 1000 : null,
-        coverArtUrl: coverArtUrl ?? null
+        'artist-credit': track['artist-credit'] || track.recording['artist-credit'] || fullRelease['artist-credit'],
+        releases: [fullRelease]
       }))
 
       if (fullTracklist.length > 0) {
-        play(fullTracklist[0])
-        setQueue(fullTracklist.slice(1))
+        play(fullTracklist[0].id)
+        const remainingIds = fullTracklist.slice(1).map(t => t.id)
+        setQueue(remainingIds)
       }
     } catch (error) {
       console.error('Failed to play release:', error)
@@ -72,6 +68,7 @@ export function ReleaseItem({ release, artistName: artistNameProp }: ReleaseItem
         <ReleaseArt 
           releaseId={releaseId} 
           title={release.title} 
+          src={release['cover-art-url']}
           className="w-full h-full rounded"
         />
         <div

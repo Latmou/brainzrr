@@ -120,6 +120,8 @@ export type RecordingDetail = {
   'artist-credit'?: ArtistCredit[];
   'first-release-date'?: string;
   releases?: Release[];
+  youtubeTitle?: string | null;
+  youtubeUrl?: string | null;
 };
 
 export type Track = {

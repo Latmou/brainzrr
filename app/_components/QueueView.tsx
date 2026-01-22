@@ -11,8 +11,9 @@ export function QueueView() {
     currentTrack, queue, removeFromQueue, goTo, toggleQueue, isPlaying, clearQueue
   } = usePlayer()
 
-  const formatDuration = (seconds: number | null) => {
-    if (seconds === null) return ''
+  const formatDuration = (ms: number | undefined) => {
+    if (ms === undefined) return ''
+    const seconds = ms / 1000
     const minutes = Math.floor(seconds / 60)
     const remainingSeconds = Math.floor(seconds % 60)
     return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`
@@ -47,19 +48,11 @@ export function QueueView() {
           {currentTrack ? (
             <div className="flex items-center gap-4 p-3 rounded-lg bg-white/5 border border-white/5">
               <div className="w-12 h-12 bg-zinc-800 rounded overflow-hidden relative flex-shrink-0">
-                {currentTrack.coverArtUrl ? (
-                  <Image
-                    src={currentTrack.coverArtUrl}
-                    width={48}
-                    height={48}
-                    alt={currentTrack.title}
-                    className="w-full h-full object-cover"
-                    unoptimized={currentTrack.coverArtUrl.includes('coverartarchive.org')}
-                  />
-                ) : currentTrack.releaseId ? (
+                {currentTrack.releases?.[0]?.id ? (
                   <ReleaseArt 
-                    releaseId={currentTrack.releaseId} 
+                    releaseId={currentTrack.releases[0].id} 
                     title={currentTrack.title}
+                    src={currentTrack.releases[0]['cover-art-url']}
                     className="w-full h-full"
                     fallbackSize={20}
                   />
@@ -80,10 +73,10 @@ export function QueueView() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-green-500 font-bold truncate">{currentTrack.title}</div>
-                <div className="text-zinc-400 text-sm truncate">{currentTrack.artist}</div>
+                <div className="text-zinc-400 text-sm truncate">{currentTrack['artist-credit']?.[0]?.name || 'Unknown Artist'}</div>
               </div>
               <div className="text-zinc-500 text-sm">
-                {formatDuration(currentTrack.duration)}
+                {formatDuration(currentTrack.length)}
               </div>
             </div>
           ) : (
@@ -103,19 +96,11 @@ export function QueueView() {
                   onClick={() => goTo(index)}
                 >
                   <div className="relative w-10 h-10 bg-zinc-800 rounded overflow-hidden flex-shrink-0">
-                    {track.coverArtUrl ? (
-                      <Image
-                        src={track.coverArtUrl}
-                        width={40}
-                        height={40}
-                        alt={track.title}
-                        className="w-full h-full object-cover"
-                        unoptimized={track.coverArtUrl.includes('coverartarchive.org')}
-                      />
-                    ) : track.releaseId ? (
+                    {track.releases?.[0]?.id ? (
                       <ReleaseArt 
-                        releaseId={track.releaseId} 
+                        releaseId={track.releases[0].id} 
                         title={track.title}
+                        src={track.releases[0]['cover-art-url']}
                         className="w-full h-full"
                         fallbackSize={16}
                       />
@@ -130,10 +115,10 @@ export function QueueView() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-medium truncate">{track.title}</div>
-                    <div className="text-zinc-400 text-xs truncate">{track.artist}</div>
+                    <div className="text-zinc-400 text-xs truncate">{track['artist-credit']?.[0]?.name || 'Unknown Artist'}</div>
                   </div>
                   <div className="text-zinc-500 text-xs hidden group-hover:block">
-                    {formatDuration(track.duration)}
+                    {formatDuration(track.length)}
                   </div>
                   <button 
                     onClick={(e) => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { YtDlp } from 'ytdlp-nodejs';
 import { musicBrainzService } from '@/app/_lib/musicbrainz';
+import { prisma } from '@/app/_lib/prisma';
 import fs from 'fs';
 import path from 'path';
 
@@ -69,15 +70,27 @@ export async function GET(
 
     const ytdlp = new YtDlp();
     const info = await ytdlp.getInfoAsync(youtubeSearch) as any;
-
-    console.log('[STREAM]', info);
     
     if (!info || !info.entries || info.entries.length === 0) {
       return NextResponse.json({ error: 'No stream found' }, { status: 404 });
     }
 
     const entry = info.entries[0];
-    const {url} = entry
+    const {url, title, webpage_url} = entry
+
+    // Save YouTube info to DB for this recording
+    try {
+      await prisma.recording.update({
+        where: { mbid },
+        data: {
+          youtubeTitle: title,
+          youtubeUrl: url
+        }
+      });
+      console.log(`[STREAM] Saved YouTube info for ${mbid}: ${title}`);
+    } catch (e) {
+      console.warn(`[STREAM] Failed to save YouTube info to DB: ${e}`);
+    }
 
     // Set up a ReadableStream to proxy the audio data
     const streamResult = ytdlp.stream(url, {

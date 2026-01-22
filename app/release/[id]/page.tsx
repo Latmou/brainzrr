@@ -5,6 +5,7 @@ import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseArt } from '@/app/_components/ReleaseArt'
 import { Pre } from '@/app/_components/Pre'
 import { ReleasePreloader } from '@/app/_components/release/ReleasePreloader'
+import { RecordingDetail } from '@/app/_types/MusicBrainz'
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -17,15 +18,11 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
   const releaseDate = release.date || 'Unknown Date'
   const coverArtUrl = release['cover-art-url']
 
-  const fullTracklist = tracks.map((track: any) => ({
-    id: track.id,
-    mbid: track.recording.id,
+  const fullTracklist: RecordingDetail[] = tracks.map((track: any) => ({
+    ...track.recording,
     title: track.title,
-    artist: track['artist-credit']?.[0]?.name || artistName,
-    artistId: track['artist-credit']?.[0]?.artist?.id || release['artist-credit']?.[0]?.artist?.id,
-    releaseId: id,
-    duration: track.recording.length ? track.recording.length / 1000 : null,
-    coverArtUrl: coverArtUrl ?? null
+    'artist-credit': track['artist-credit'] || track.recording['artist-credit'] || release['artist-credit'],
+    releases: [release]
   }))
 
   return (
@@ -36,6 +33,7 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
         <ReleaseArt 
           releaseId={id} 
           title={release.title} 
+          src={coverArtUrl}
           className="w-48 h-48 md:w-64 md:h-64 rounded shadow-2xl flex-shrink-0"
           fallbackSize={80}
         />

@@ -66,25 +66,31 @@ model VerificationToken {
 }
 
 model Recording {
-  mbid      String    @id
-  title     String
-  artist    String
-  releaseId String?
-  duration  Int? // milliseconds
-  data      Json // Store full MB response
-  addedAt   DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  history   History[]
+  mbid         String    @id
+  title        String
+  artist       String
+  releaseId    String?
+  duration     Int? // milliseconds
+  youtubeTitle String?
+  youtubeUrl   String?
+  data         Json // Store full MB response
+  addedAt      DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  history      History[]
+
+  release Release? @relation(fields: [releaseId], references: [id])
 }
 
 model Release {
-  mbid        String   @id
+  id          String   @id
   title       String
   artist      String
   coverArtUrl String?
   data        Json // Store full MB response
   addedAt     DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  recordings Recording[]
 }
 
 model Artist {

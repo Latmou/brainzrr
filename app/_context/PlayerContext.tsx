@@ -3,23 +3,15 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
 import { cacheService } from '@/app/_lib/cache'
 import { addToHistory } from '@/app/_actions/history'
+import { getRecordingYoutubeInfo, getRecordingAction } from '@/app/_actions/recording'
 
-interface Track {
-  id: string
-  mbid: string
-  title: string
-  artist: string
-  artistId?: string
-  releaseId?: string
-  duration: number | null
-  coverArtUrl: string | null
-}
+import { RecordingDetail } from '@/app/_types/MusicBrainz'
 
 interface PlayerContextType {
-  currentTrack: Track | null
+  currentTrack: RecordingDetail | null
   isPlaying: boolean
-  queue: Track[]
-  history: Track[]
+  queue: RecordingDetail[]
+  history: RecordingDetail[]
   volume: number
   loopMode: 'none' | 'all' | 'one'
   isRandom: boolean
@@ -27,15 +19,15 @@ interface PlayerContextType {
   currentTime: number
   duration: number
   isLoading: boolean
-  play: (track?: Track) => void
+  play: (recordingId?: string) => void
   pause: () => void
   togglePlay: () => void
   next: () => void
   previous: () => void
   seek: (time: number) => void
-  setQueue: (tracks: Track[]) => void
-  addToQueue: (track: Track) => void
-  removeFromQueue: (trackId: string) => void
+  setQueue: (recordingIds: string[]) => void
+  addToQueue: (recordingIds: string | string[]) => void
+  removeFromQueue: (mbid: string) => void
   changeQueueOrder: (oldIndex: number, newIndex: number) => void
   goTo: (index: number) => void
   clearQueue: () => void
@@ -43,7 +35,7 @@ interface PlayerContextType {
   setLoopMode: (mode: 'none' | 'all' | 'one') => void
   toggleRandom: () => void
   setIsFullScreen: (isFullScreen: boolean) => void
-  preloadQueue: (tracks: Track[]) => void
+  preloadQueue: (mbid: string) => void
   showQueue: boolean
   toggleQueue: () => void
 }
@@ -51,10 +43,10 @@ interface PlayerContextType {
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined)
 
 export function PlayerProvider({ children }: { children: React.ReactNode }) {
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(null)
+  const [currentTrack, setCurrentTrack] = useState<RecordingDetail | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
-  const [queue, setQueue] = useState<Track[]>([])
-  const [history, setHistory] = useState<Track[]>([])
+  const [queue, setQueue] = useState<RecordingDetail[]>([])
+  const [history, setHistory] = useState<RecordingDetail[]>([])
   const [volume, setVolume] = useState(0.7)
   const [loopMode, setLoopMode] = useState<'none' | 'all' | 'one'>('none')
   const [isRandom, setIsRandom] = useState(false)
@@ -86,15 +78,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       // Load state from cache on mount
       const savedTrackId = await cacheService.get<string>('player_currentTrackId')
       const savedTime = await cacheService.get<number>('player_currentTime')
-      const savedQueue = await cacheService.get<Track[]>('player_queue')
-      const savedHistory = await cacheService.get<Track[]>('player_history')
+      const savedQueue = await cacheService.get<RecordingDetail[]>('player_queue')
+      const savedHistory = await cacheService.get<RecordingDetail[]>('player_history')
 
       if (savedTrackId) {
-        const track = await cacheService.get<Track>(`player_recording_${savedTrackId}`)
+        const track = await cacheService.get<RecordingDetail>(`player_recording_${savedTrackId}`)
         if (track) {
           setCurrentTrack(track)
-          if (track.duration) {
-            setDuration(track.duration)
+          if (track.length) {
+            setDuration(track.length / 1000)
           }
         }
       }
@@ -152,13 +144,13 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const play = useCallback(async (track?: Track) => {
+  const play = useCallback(async (recordingId?: string) => {
     if (!audioRef.current) return
 
-    if (track) {
+    if (recordingId) {
       // If it's the same track and it's already playing, do nothing
       // If it's the same track and it's paused, just play it
-      if (currentTrack?.mbid === track.mbid) {
+      if (currentTrack?.id === recordingId) {
         if (!isPlaying) {
           try {
             await audioRef.current.play()
@@ -172,33 +164,64 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      setCurrentTrack(track)
-      setCurrentTime(0)
-      setDuration(track.duration || 0)
       setIsLoading(true)
-      
-      // Add to history
-      addToHistory(track.mbid)
-      
-      // Pause and reset before changing src to avoid errors
-      audioRef.current.pause()
-      audioRef.current.src = `/api/stream?mbid=${track.mbid}`
-      audioRef.current.currentTime = 0 // Explicitly start at 0 for new tracks
-      audioRef.current.load()
-      
+
       try {
-        await audioRef.current.play()
-        setIsPlaying(true)
-      } catch (e: any) {
-        if (e.name !== 'AbortError') {
-          console.error("Playback error:", e)
-          setIsPlaying(false)
+        const recording = await getRecordingAction(recordingId);
+        if (!recording) {
+          setIsLoading(false);
+          return;
         }
+        
+        // Add to history
+        addToHistory(recordingId)
+
+        setCurrentTrack(recording as RecordingDetail)
+        setCurrentTime(0)
+        setDuration(recording.length ? recording.length / 1000 : 0)
+        
+        // Pause and reset before changing src to avoid errors
+        audioRef.current.pause()
+        audioRef.current.src = `/api/stream?mbid=${recordingId}`
+        audioRef.current.currentTime = 0 // Explicitly start at 0 for new tracks
+        audioRef.current.load()
+        
+        try {
+          await audioRef.current.play()
+          setIsPlaying(true)
+          
+          // If we didn't have YouTube info yet, try to fetch it after a delay
+          // This is useful because the /api/stream might have just fetched and saved it
+          if (!recording.youtubeTitle) {
+            setTimeout(async () => {
+              try {
+                const data = await getRecordingYoutubeInfo(recordingId);
+                if (data && data.youtubeTitle && data.youtubeUrl) {
+                  setCurrentTrack(prev => prev && prev.id === recordingId ? {
+                    ...prev,
+                    youtubeTitle: data.youtubeTitle,
+                    youtubeUrl: data.youtubeUrl
+                  } : prev);
+                }
+              } catch (e) {
+                console.warn("Failed to refetch YouTube info:", e);
+              }
+            }, 5000); // 5 seconds should be enough for ytdlp to get info
+          }
+        } catch (e: any) {
+          if (e.name !== 'AbortError') {
+            console.error("Playback error:", e)
+            setIsPlaying(false)
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load track:", e);
+        setIsLoading(false);
       }
     } else if (currentTrack) {
       // If we have a currentTrack but no src (e.g. after reload), set it
-      if (!audioRef.current.src && currentTrack.mbid) {
-        audioRef.current.src = `/api/stream?mbid=${currentTrack.mbid}`
+      if (!audioRef.current.src && currentTrack.id) {
+        audioRef.current.src = `/api/stream?mbid=${currentTrack.id}`
         audioRef.current.currentTime = currentTime
       }
       
@@ -237,15 +260,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setQueue(prev => prev.slice(1))
       if (currentTrack) setHistory(prev => [currentTrack, ...prev])
       setCurrentTime(0)
-      play(nextTrack)
+      play(nextTrack.id)
     } else if (loopMode === 'all' && (history.length > 0 || currentTrack)) {
-      const allTracks = [...[...history].reverse(), currentTrack].filter(Boolean) as Track[]
+      const allTracks = [...[...history].reverse(), currentTrack].filter(Boolean) as RecordingDetail[]
       if (allTracks.length > 0) {
         const firstTrack = allTracks[0]
         setQueue(allTracks.slice(1))
         setHistory([])
         setCurrentTime(0)
-        play(firstTrack)
+        play(firstTrack.id)
       } else {
         setIsPlaying(false)
       }
@@ -260,19 +283,54 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setHistory(prev => prev.slice(1))
       if (currentTrack) setQueue(prev => [currentTrack, ...prev])
       setCurrentTime(0)
-      play(prevTrack)
+      play(prevTrack.id)
     } else {
       // when going previous with nothing before, set timer at 0
       seek(0)
     }
   }, [history, currentTrack, play, seek])
 
-  const addToQueue = useCallback((track: Track) => {
-    setQueue(prev => [...prev, track])
+  const addToQueue = useCallback(async (recordingIds: string | string[]) => {
+    const ids = Array.isArray(recordingIds) ? recordingIds : [recordingIds]
+    
+    // We could just add IDs to the queue, but the queue currently expects Track objects
+    // for rendering in QueueView. 
+    // Wait, I should probably change the queue to store Track objects but provide 
+    // helper to add by ID.
+    
+    setIsLoading(true)
+    try {
+      const newTracks = await Promise.all(ids.map(async (id) => {
+        return await getRecordingAction(id)
+      }))
+      
+      const validTracks = newTracks.filter((t): t is RecordingDetail => t !== null)
+      setQueue(prev => [...prev, ...validTracks])
+    } catch (e) {
+      console.error("Failed to add to queue:", e)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
-  const removeFromQueue = useCallback((trackId: string) => {
-    setQueue(prev => prev.filter(t => t.id !== trackId))
+  const setQueueByIds = useCallback(async (recordingIds: string[]) => {
+    setIsLoading(true)
+    try {
+      const newTracks = await Promise.all(recordingIds.map(async (id) => {
+        return await getRecordingAction(id)
+      }))
+      
+      const validTracks = newTracks.filter((t): t is RecordingDetail => t !== null)
+      setQueue(validTracks)
+    } catch (e) {
+      console.error("Failed to set queue:", e)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const removeFromQueue = useCallback((mbid: string) => {
+    setQueue(prev => prev.filter(t => t.id !== mbid))
   }, [])
 
   const changeQueueOrder = useCallback((oldIndex: number, newIndex: number) => {
@@ -290,7 +348,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const skipped = queue.slice(0, index)
     if (currentTrack) setHistory(h => [currentTrack, ...[...skipped].reverse(), ...h])
     setQueue(queue.slice(index + 1))
-    play(track)
+    play(track.id)
   }, [currentTrack, play, queue])
 
   const clearQueue = useCallback(() => {
@@ -305,23 +363,18 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isRandom])
 
-  const preloadQueue = useCallback((tracks: Track[]) => {
-    // Take the first 3 tracks from the queue to preload
-    const toPreload = tracks.slice(0, 3)
-    
-    toPreload.forEach(track => {
-      const url = `/api/stream?mbid=${track.mbid}`
-      if ('caches' in window) {
-        caches.open('brainzrr-audio-v1').then(cache => {
-          cache.match(url).then(response => {
-            if (!response) {
-              console.log(`Preloading track: ${track.title}`)
-              fetch(url).catch(err => console.error('Preload failed', err))
-            }
-          })
+  const preloadQueue = useCallback((mbid: string) => {
+    const url = `/api/stream?mbid=${mbid}`
+    if ('caches' in window) {
+      caches.open('brainzrr-audio-v1').then(cache => {
+        cache.match(url).then(response => {
+          if (!response) {
+            console.log(`Preloading track: ${mbid}`)
+            fetch(url).catch(err => console.error('Preload failed', err))
+          }
         })
-      }
-    })
+      })
+    }
   }, [])
 
   // Event Handlers
@@ -339,8 +392,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     if (audioRef.current) {
       const audioDuration = audioRef.current.duration
       setDuration(audioDuration)
-      if (currentTrack && (!currentTrack.duration || Math.abs(currentTrack.duration - audioDuration) > 1)) {
-        const updatedTrack = { ...currentTrack, duration: audioDuration }
+      if (currentTrack && (!currentTrack.length || Math.abs(currentTrack.length / 1000 - audioDuration) > 1)) {
+        const updatedTrack = { ...currentTrack, length: audioDuration * 1000 }
         setCurrentTrack(updatedTrack)
         cacheService.set(`player_recording_${currentTrack.id}`, updatedTrack)
       }
@@ -379,7 +432,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
           const retryTrack = { ...currentTrack }
           const timestamp = Date.now()
           
-          audio.src = `/api/stream?mbid=${retryTrack.mbid}&t=${timestamp}`
+          audio.src = `/api/stream?mbid=${retryTrack.id}&t=${timestamp}`
           setIsLoading(true)
           
           try {
@@ -426,9 +479,11 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // Preload next tracks when queue changes
   useEffect(() => {
     if (queue.length > 0) {
-      preloadQueue(queue)
+      queue.slice(0, 3).forEach(track => {
+        preloadQueue(track.id)
+      })
     }
-  }, [queue])
+  }, [queue, preloadQueue])
 
   const toggleQueue = useCallback(() => {
     setShowQueue(prev => !prev)
@@ -438,7 +493,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     <PlayerContext.Provider value={{
       currentTrack, isPlaying, queue, history, volume, loopMode, isRandom, isFullScreen,
       currentTime, duration, isLoading, showQueue,
-      play, pause, togglePlay, next, previous, seek, setQueue, addToQueue, removeFromQueue,
+      play, pause, togglePlay, next, previous, seek, setQueue: setQueueByIds, addToQueue, removeFromQueue,
       changeQueueOrder, goTo, clearQueue, setVolume, setLoopMode, toggleRandom, setIsFullScreen, preloadQueue, toggleQueue
     }}>
       {children}

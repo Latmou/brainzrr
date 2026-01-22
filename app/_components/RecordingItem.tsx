@@ -5,17 +5,6 @@ import { usePlayer } from '@/app/_context/PlayerContext'
 import { RecordingDetail } from "@/app/_types/MusicBrainz";
 import { cn } from '@/app/_lib/utils'
 
-interface Track {
-  id: string
-  mbid: string
-  title: string
-  artist: string
-  artistId?: string
-  releaseId?: string
-  duration: number | null
-  coverArtUrl: string | null
-}
-
 interface RecordingItemProps {
   recording: RecordingDetail
   artistName?: string // Used as fallback or if not present in recording
@@ -24,7 +13,7 @@ interface RecordingItemProps {
   index?: number
   showIndex?: boolean
   coverArtUrl?: string | null
-  fullTracklist?: Track[]
+  fullTracklist?: RecordingDetail[]
 }
 
 export function RecordingItem({ recording, artistName, artistId, releaseId, index, showIndex = true, coverArtUrl, fullTracklist }: RecordingItemProps) {
@@ -34,31 +23,20 @@ export function RecordingItem({ recording, artistName, artistId, releaseId, inde
   const displayArtistId = recording['artist-credit']?.[0]?.artist?.id || artistId
   const displayReleaseId = releaseId || recording.releases?.[0]?.id
   
-  const isCurrentTrack = currentTrack?.mbid === recording.id
+  const isCurrentTrack = currentTrack?.id === recording.id
   const isThisPlaying = isCurrentTrack && isPlaying
 
   const handleTogglePlay = () => {
     if (isThisPlaying) {
       pause()
     } else {
-      const trackToPlay: Track = {
-        id: recording.id,
-        mbid: recording.id,
-        title: recording.title,
-        artist: displayArtist,
-        artistId: displayArtistId,
-        releaseId: displayReleaseId,
-        duration: recording.length ? recording.length / 1000 : null,
-        coverArtUrl: coverArtUrl ?? (displayReleaseId ? `https://coverartarchive.org/release/${displayReleaseId}/front-250` : null)
-      }
-
-      play(trackToPlay)
+      play(recording.id)
 
       if (fullTracklist && fullTracklist.length > 0) {
-        const trackIndex = fullTracklist.findIndex(t => t.mbid === recording.id)
+        const trackIndex = fullTracklist.findIndex(t => t.id === recording.id)
         if (trackIndex !== -1) {
-          const remainingTracks = fullTracklist.slice(trackIndex + 1)
-          setQueue(remainingTracks)
+          const remainingTrackIds = fullTracklist.slice(trackIndex + 1).map(t => t.id)
+          setQueue(remainingTrackIds)
         }
       }
     }

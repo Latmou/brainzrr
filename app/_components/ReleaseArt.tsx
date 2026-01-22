@@ -10,12 +10,13 @@ import Image from "next/image";
 interface ReleaseArtProps {
   releaseId: string
   title: string
+  src?: string | null
   className?: string
   fallbackSize?: number
 }
 
-export function ReleaseArt({releaseId, title, className, fallbackSize = 48}: ReleaseArtProps) {
-  const [coverUrl, setCoverUrl] = useState<string | null>(null)
+export function ReleaseArt({releaseId, title, src, className, fallbackSize = 48}: ReleaseArtProps) {
+  const [coverUrl, setCoverUrl] = useState<string | null>(src || null)
 
   useEffect(() => {
     const loadArt = async () => {

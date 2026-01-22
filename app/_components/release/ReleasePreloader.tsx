@@ -3,23 +3,16 @@
 import { useEffect } from 'react'
 import { usePlayer } from '@/app/_context/PlayerContext'
 
-interface Track {
-  id: string
-  mbid: string
-  title: string
-  artist: string
-  artistId?: string
-  releaseId?: string
-  duration: number | null
-  coverArtUrl: string | null
-}
+import { RecordingDetail } from '@/app/_types/MusicBrainz'
 
-export function ReleasePreloader({ tracks }: { tracks: Track[] }) {
+export function ReleasePreloader({ tracks }: { tracks: RecordingDetail[] }) {
   const { preloadQueue } = usePlayer()
 
   useEffect(() => {
     if (tracks.length > 0) {
-      preloadQueue(tracks)
+      tracks.slice(0, 5).forEach(track => {
+        preloadQueue(track.id)
+      })
     }
   }, [tracks, preloadQueue])
 

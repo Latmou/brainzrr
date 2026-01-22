@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { ReleaseArt } from './ReleaseArt'
 import { Slider } from './Slider'
 import Image from 'next/image'
+import {useEffect} from "react";
 
 export function PlayerBar({ className }: { className?: string }) {
   const { 
@@ -23,14 +24,6 @@ export function PlayerBar({ className }: { className?: string }) {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
     return `${minutes}:${String(seconds).padStart(2, '0')}`
-  }
-
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!duration) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const percentage = Math.max(0, Math.min(1, x / rect.width))
-    seek(percentage * duration)
   }
 
   return (
@@ -47,19 +40,11 @@ export function PlayerBar({ className }: { className?: string }) {
                  <div className="w-full h-full flex items-center justify-center bg-zinc-800">
                     <Loader2 size={24} className="text-white animate-spin" />
                  </div>
-               ) : currentTrack.coverArtUrl ? (
-                  <Image
-                    src={currentTrack.coverArtUrl}
-                    width={56}
-                    height={56}
-                    alt={currentTrack.title}
-                    className="w-full h-full object-cover"
-                    unoptimized={currentTrack.coverArtUrl.includes('coverartarchive.org')}
-                  />
-               ) : currentTrack.releaseId ? (
+               ) : currentTrack.releases?.[0]?.id ? (
                  <ReleaseArt 
-                    releaseId={currentTrack.releaseId} 
+                    releaseId={currentTrack.releases[0].id} 
                     title={currentTrack.title}
+                    src={currentTrack.releases[0]['cover-art-url']}
                     className="w-full h-full"
                     fallbackSize={24}
                  />
@@ -70,9 +55,9 @@ export function PlayerBar({ className }: { className?: string }) {
                )}
             </div>
             <div className="overflow-hidden">
-              {currentTrack.releaseId ? (
+              {currentTrack.releases?.[0]?.id ? (
                 <Link 
-                  href={`/release/${currentTrack.releaseId}`}
+                  href={`/release/${currentTrack.releases[0].id}`}
                   className="text-white text-sm font-semibold truncate hover:underline block"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -84,17 +69,17 @@ export function PlayerBar({ className }: { className?: string }) {
                 </div>
               )}
               
-              {currentTrack.artistId ? (
+              {currentTrack['artist-credit']?.[0]?.artist?.id ? (
                 <Link 
-                  href={`/artist/${currentTrack.artistId}`}
+                  href={`/artist/${currentTrack['artist-credit'][0].artist.id}`}
                   className="text-zinc-400 text-xs hover:text-white hover:underline truncate block"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {currentTrack.artist}
+                  {currentTrack['artist-credit'][0].name}
                 </Link>
               ) : (
                 <div className="text-zinc-400 text-xs truncate">
-                  {currentTrack.artist}
+                  {currentTrack['artist-credit']?.[0]?.name || 'Unknown Artist'}
                 </div>
               )}
             </div>

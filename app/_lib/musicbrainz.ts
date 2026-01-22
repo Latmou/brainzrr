@@ -84,10 +84,10 @@ export const musicBrainzService = {
     // Check DB cache first
     try {
       const cached = await prisma.release.findUnique({
-        where: { mbid }
+        where: { id: mbid }
       });
       if (cached) {
-        console.log(`[CACHE] Hit Release: ${mbid}`);
+        console.log(`[CACHE] Release: ${mbid}`);
         return cached.data as unknown as Release;
       }
     } catch (e) {
@@ -100,7 +100,7 @@ export const musicBrainzService = {
     // Save to DB cache
     try {
       await prisma.release.upsert({
-        where: { mbid },
+        where: { id: mbid },
         update: {
           title: release.title,
           artist: release['artist-credit']?.[0]?.name || 'Unknown',
@@ -108,7 +108,7 @@ export const musicBrainzService = {
           data: release as any
         },
         create: {
-          mbid,
+          id: mbid,
           title: release.title,
           artist: release['artist-credit']?.[0]?.name || 'Unknown',
           coverArtUrl: release['cover-art-url'],
@@ -155,13 +155,40 @@ export const musicBrainzService = {
   },
 
   async getReleaseArt(mbid: string) {
+    // Check DB cache first
+    try {
+      const cached = await prisma.release.findUnique({
+        where: { id: mbid },
+        select: { coverArtUrl: true }
+      });
+      if (cached?.coverArtUrl) {
+        console.log(`[CACHE] Release Art: ${mbid}`);
+        return cached.coverArtUrl;
+      }
+    } catch (e) {
+      console.warn(`[CACHE] Error reading Release Art from DB: ${e}`);
+    }
+
     try {
       const response = await fetch(`https://coverartarchive.org/release/${mbid}`);
       if (response.ok) {
         const data = await response.json();
         const frontImage = data.images.find((img: any) => img.front);
         if (frontImage) {
-          return frontImage.thumbnails?.['500'] || frontImage.thumbnails?.large || frontImage.image;
+          const artUrl = frontImage.thumbnails?.['500'] || frontImage.thumbnails?.large || frontImage.image;
+          
+          // Save art to release in db if it exists
+          try {
+            await prisma.release.update({
+              where: { id: mbid },
+              data: { coverArtUrl: artUrl }
+            });
+            console.log(`[CACHE] Updated cover art for Release: ${mbid}`);
+          } catch (e) {
+            // It's okay if the release doesn't exist in DB yet
+          }
+
+          return artUrl;
         }
       }
     } catch (error) {
@@ -178,11 +205,24 @@ export const musicBrainzService = {
     // Check DB cache first
     try {
       const cached = await prisma.recording.findUnique({
-        where: { mbid }
+        where: { mbid },
+        include: {
+          release: true
+        }
       });
       if (cached) {
-        console.log(`[CACHE] Hit Recording: ${mbid}`);
-        return cached.data as unknown as RecordingDetail;
+        console.log(`[CACHE] Recording: ${mbid}`);
+        const data = cached.data as unknown as RecordingDetail;
+        const release = {
+          ...cached.release,
+          'cover-art-url': cached.release ? cached.release.coverArtUrl : undefined,
+        };
+        return {
+          ...data,
+          youtubeTitle: cached.youtubeTitle,
+          youtubeUrl: cached.youtubeUrl,
+          releases: [release]
+        };
       }
     } catch (e) {
       console.warn(`[CACHE] Error reading Recording from DB: ${e}`);

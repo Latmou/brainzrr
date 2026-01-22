@@ -2,7 +2,7 @@
 
 import {
   Play, Pause, SkipForward, SkipBack, Repeat, Shuffle,
-  ChevronDown, ListMusic, Repeat1, Volume2, Loader2, Music
+  ChevronDown, ListMusic, Repeat1, Volume2, Loader2, Music, ExternalLink
 } from 'lucide-react'
 import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
@@ -11,6 +11,8 @@ import { ReleaseArt } from './ReleaseArt'
 import { Slider } from './Slider'
 import Image from 'next/image'
 import { QueueView } from './QueueView'
+import { useState } from 'react'
+import {Pre} from "@/app/_components/Pre";
 
 export function FullScreenPlayer() {
   const { 
@@ -19,6 +21,8 @@ export function FullScreenPlayer() {
     currentTime, duration, seek, isFullScreen, setIsFullScreen, isLoading,
     showQueue, toggleQueue
   } = usePlayer()
+
+  const [showSource, setShowSource] = useState(false)
 
   if (!currentTrack) return null
 
@@ -66,19 +70,11 @@ export function FullScreenPlayer() {
                   <div className="w-full h-full flex items-center justify-center bg-zinc-800">
                     <Loader2 size={80} className="text-white animate-spin" />
                   </div>
-                ) : currentTrack.coverArtUrl ? (
-                  <Image
-                    src={currentTrack.coverArtUrl}
-                    width={400}
-                    height={400}
-                    alt={currentTrack.title}
-                    className="w-full h-full object-cover"
-                    unoptimized={currentTrack.coverArtUrl.includes('coverartarchive.org')}
-                  />
-                ) : currentTrack.releaseId ? (
+                ) : currentTrack.releases?.[0]?.id ? (
                   <ReleaseArt 
-                    releaseId={currentTrack.releaseId} 
+                    releaseId={currentTrack.releases[0].id} 
                     title={currentTrack.title}
+                    src={currentTrack.releases[0]['cover-art-url']}
                     className="w-full h-full"
                     fallbackSize={80}
                   />
@@ -93,9 +89,9 @@ export function FullScreenPlayer() {
             {/* Track Info */}
             <div className="flex-1 flex flex-col justify-center">
               <div className="max-w-2xl w-full mb-8">
-                {currentTrack.releaseId ? (
+                {currentTrack.releases?.[0]?.id ? (
                   <Link 
-                    href={`/release/${currentTrack.releaseId}`}
+                    href={`/release/${currentTrack.releases[0].id}`}
                     className="text-2xl lg:text-4xl font-bold mb-2 hover:underline block"
                     onClick={() => setIsFullScreen(false)}
                   >
@@ -105,16 +101,16 @@ export function FullScreenPlayer() {
                   <div className="text-2xl lg:text-4xl font-bold mb-2">{currentTrack.title}</div>
                 )}
                 
-                {currentTrack.artistId ? (
+                {currentTrack['artist-credit']?.[0]?.artist?.id ? (
                   <Link 
-                    href={`/artist/${currentTrack.artistId}`}
+                    href={`/artist/${currentTrack['artist-credit'][0].artist.id}`}
                     className="text-zinc-400 text-lg lg:text-2xl hover:text-white hover:underline block"
                     onClick={() => setIsFullScreen(false)}
                   >
-                    {currentTrack.artist}
+                    {currentTrack['artist-credit'][0].name}
                   </Link>
                 ) : (
-                  <div className="text-zinc-400 text-lg lg:text-2xl">{currentTrack.artist}</div>
+                  <div className="text-zinc-400 text-lg lg:text-2xl">{currentTrack['artist-credit']?.[0]?.name || 'Unknown Artist'}</div>
                 )}
               </div>
 
@@ -170,22 +166,59 @@ export function FullScreenPlayer() {
                 </button>
               </div>
 
-              {/* Volume */}
-              <div 
-                className="max-w-2xl w-full flex items-center gap-4 text-zinc-400 group"
-                onWheel={(e) => {
-                  e.stopPropagation()
-                  const delta = e.deltaY > 0 ? -0.05 : 0.05
-                  setVolume(Math.max(0, Math.min(1, volume + delta)))
-                }}
-              >
-                <Volume2 size={20} className="group-hover:text-white transition-colors" />
-                <Slider 
-                  value={volume}
-                  onChange={setVolume}
-                  activeColor="bg-white group-hover:bg-green-500"
-                  thumbSize="w-3 h-3"
-                />
+              {/* Volume & Source */}
+              <div className="max-w-2xl w-full flex flex-col gap-6">
+                <div 
+                  className="flex items-center gap-4 text-zinc-400 group"
+                  onWheel={(e) => {
+                    e.stopPropagation()
+                    const delta = e.deltaY > 0 ? -0.05 : 0.05
+                    setVolume(Math.max(0, Math.min(1, volume + delta)))
+                  }}
+                >
+                  <Volume2 size={20} className="group-hover:text-white transition-colors" />
+                  <Slider 
+                    value={volume}
+                    onChange={setVolume}
+                    activeColor="bg-white group-hover:bg-green-500"
+                    thumbSize="w-3 h-3"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowSource(!showSource)}
+                    className="text-xs text-zinc-500 hover:text-white transition-colors flex items-center gap-2 w-fit"
+                  >
+                    <ExternalLink size={14} />
+                    {showSource ? 'Masquer la source' : 'Voir la source'}
+                  </button>
+
+                  {showSource && (
+                    <div className="bg-white/5 p-3 rounded-lg border border-white/10 animate-in fade-in slide-in-from-top-1">
+                      <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Source YouTube</div>
+                      {currentTrack.youtubeTitle ? (
+                        <>
+                          <div className="text-sm text-zinc-300 font-medium mb-1 line-clamp-1">
+                            {currentTrack.youtubeTitle}
+                          </div>
+                          <a
+                            href={currentTrack.youtubeUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-green-500 hover:underline flex items-center gap-1"
+                          >
+                            Ouvrir sur YouTube <ExternalLink size={10} />
+                          </a>
+                        </>
+                      ) : (
+                        <div className="text-xs text-zinc-500 italic">
+                          Informations source non disponibles pour ce morceau.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>
