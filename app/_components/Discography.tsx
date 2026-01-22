@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { ReleaseGroup } from '@/app/_types/MusicBrainz'
-import { ReleaseGroupItem } from './ReleaseGroupItem'
-import {ChevronDown, ChevronRight, ChevronUp} from 'lucide-react'
+import {useState} from 'react'
+import {ReleaseGroup} from '@/app/_types/MusicBrainz'
+import {ReleaseGroupItem} from './ReleaseGroupItem'
+import {ChevronDown, ChevronRight} from 'lucide-react'
 
 interface DiscographyProps {
   artistName: string
@@ -17,13 +17,13 @@ interface DiscographyProps {
   }
 }
 
-export function Discography({ artistName, categories }: DiscographyProps) {
+export function Discography({artistName, categories}: DiscographyProps) {
   const [showSecondary, setShowSecondary] = useState(false)
 
-  const hasSecondary = 
-    categories.lives.length > 0 || 
-    categories.compilations.length > 0 || 
-    categories.singles.length > 0 || 
+  const hasSecondary =
+    categories.lives.length > 0 ||
+    categories.compilations.length > 0 ||
+    categories.singles.length > 0 ||
     categories.other.length > 0
 
   return (
@@ -31,7 +31,7 @@ export function Discography({ artistName, categories }: DiscographyProps) {
       {categories.albums.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4">Albums</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="flex flex-wrap gap-4 items-center">
             {categories.albums.map((releaseGroup) => (
               <ReleaseGroupItem
                 key={releaseGroup.id}
@@ -46,13 +46,14 @@ export function Discography({ artistName, categories }: DiscographyProps) {
       {categories.ep.length > 0 && (
         <section>
           <h2 className="text-2xl font-bold mb-4">EPs</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="flex flex-wrap gap-4">
             {categories.ep.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artistName}
-              />
+              <div key={releaseGroup.id}>
+                <ReleaseGroupItem
+                  releaseGroup={releaseGroup}
+                  artistName={artistName}
+                />
+              </div>
             ))}
           </div>
         </section>
@@ -64,7 +65,7 @@ export function Discography({ artistName, categories }: DiscographyProps) {
             onClick={() => setShowSecondary(!showSecondary)}
             className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors font-bold text-lg w-fit"
           >
-            {showSecondary ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+            {showSecondary ? <ChevronDown size={20}/> : <ChevronRight size={20}/>}
             {showSecondary ? 'Masquer' : 'Afficher'} Lives, Singles et Autres
           </button>
 
@@ -73,13 +74,14 @@ export function Discography({ artistName, categories }: DiscographyProps) {
               {categories.lives.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold mb-4">Lives</h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="flex flex-wrap gap-4">
                     {categories.lives.map((releaseGroup) => (
-                      <ReleaseGroupItem
-                        key={releaseGroup.id}
-                        releaseGroup={releaseGroup}
-                        artistName={artistName}
-                      />
+                      <div key={releaseGroup.id}>
+                        <ReleaseGroupItem
+                          releaseGroup={releaseGroup}
+                          artistName={artistName}
+                        />
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -88,13 +90,14 @@ export function Discography({ artistName, categories }: DiscographyProps) {
               {categories.compilations.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold mb-4">Compilations</h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="flex flex-wrap gap-4">
                     {categories.compilations.map((releaseGroup) => (
-                      <ReleaseGroupItem
-                        key={releaseGroup.id}
-                        releaseGroup={releaseGroup}
-                        artistName={artistName}
-                      />
+                      <div key={releaseGroup.id}>
+                        <ReleaseGroupItem
+                          releaseGroup={releaseGroup}
+                          artistName={artistName}
+                        />
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -103,13 +106,14 @@ export function Discography({ artistName, categories }: DiscographyProps) {
               {categories.singles.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold mb-4">Singles</h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="flex flex-wrap gap-4">
                     {categories.singles.map((releaseGroup) => (
-                      <ReleaseGroupItem
-                        key={releaseGroup.id}
-                        releaseGroup={releaseGroup}
-                        artistName={artistName}
-                      />
+                      <div key={releaseGroup.id}>
+                        <ReleaseGroupItem
+                          releaseGroup={releaseGroup}
+                          artistName={artistName}
+                        />
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -118,13 +122,14 @@ export function Discography({ artistName, categories }: DiscographyProps) {
               {categories.other.length > 0 && (
                 <section>
                   <h2 className="text-2xl font-bold mb-4">Autre</h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="flex flex-wrap gap-4">
                     {categories.other.map((releaseGroup) => (
-                      <ReleaseGroupItem
-                        key={releaseGroup.id}
-                        releaseGroup={releaseGroup}
-                        artistName={artistName}
-                      />
+                      <div key={releaseGroup.id}>
+                        <ReleaseGroupItem
+                          releaseGroup={releaseGroup}
+                          artistName={artistName}
+                        />
+                      </div>
                     ))}
                   </div>
                 </section>

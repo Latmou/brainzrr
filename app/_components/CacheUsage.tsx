@@ -57,12 +57,12 @@ export function CacheUsage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-zinc-900/50 p-4 rounded-lg">
+      <div className="flex flex-wrap gap-6 mb-8">
+        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-[200px]">
           <div className="text-zinc-400 text-sm mb-1">Éléments mis en cache</div>
           <div className="text-3xl font-bold">{stats.count}</div>
         </div>
-        <div className="bg-zinc-900/50 p-4 rounded-lg">
+        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-[200px]">
           <div className="text-zinc-400 text-sm mb-1">Taille estimée</div>
           <div className="text-3xl font-bold">{formatSize(stats.size)}</div>
         </div>

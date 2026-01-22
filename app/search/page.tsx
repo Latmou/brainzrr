@@ -109,9 +109,9 @@ export default function SearchPage() {
           {results.artists.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold mb-4">Artistes</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="flex flex-wrap gap-4 items-center">
                 {results.artists.slice(0, 5).map((artist: any) => (
-                  <ArtistItem key={artist.id} artist={artist}/>
+                  <ArtistItem artist={artist} key={artist.id}/>
                 ))}
               </div>
             </section>
@@ -137,9 +137,9 @@ export default function SearchPage() {
           {results.releases.length > 0 && (
             <section>
               <h2 className="text-2xl font-bold mb-4">Releases</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="flex flex-wrap gap-4 items-center">
                 {results.releases.slice(0, 5).map((release: any) => (
-                  <ReleaseItem key={release.id} release={release}/>
+                  <ReleaseItem release={release} key={release.id}/>
                 ))}
               </div>
             </section>

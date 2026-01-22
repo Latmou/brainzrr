@@ -1,11 +1,9 @@
-import {Loader2} from "lucide-react";
-
 export default function Loading() {
   return (
     <div className="flex flex-col gap-8 p-4 md:p-0 animate-pulse">
       {/* Header Skeleton */}
       <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
-        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-zinc-800 shadow-2xl flex-shrink-0"/>
+        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-zinc-800 shadow-2xl shrink-0"/>
         <div className="flex flex-col items-center md:items-start w-full min-w-0">
           <div className="h-4 w-16 bg-zinc-800 rounded mb-2"></div>
           <div className="h-12 md:h-20 w-3/4 bg-zinc-800 rounded mb-4"></div>
@@ -34,7 +32,7 @@ export default function Loading() {
       <div className="flex flex-col gap-8">
         <section>
           <div className="h-8 w-32 bg-zinc-800 rounded mb-4"></div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="flex flex-wrap gap-4">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="aspect-square bg-zinc-800 rounded-lg"></div>
             ))}

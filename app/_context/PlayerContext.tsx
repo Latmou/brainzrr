@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
 import { cacheService } from '@/app/_lib/cache'
+import { addToHistory } from '@/app/_actions/history'
 
 interface Track {
   id: string
@@ -113,7 +114,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (audioRef.current && typeof volume === 'number' && isFinite(volume)) {
+    if (audioRef.current && isFinite(volume)) {
       const validatedVolume = Math.max(0, Math.min(1, volume))
       audioRef.current.volume = validatedVolume
       cacheService.set('player_volume', validatedVolume)
@@ -171,6 +172,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       setCurrentTime(0)
       setDuration(track.duration || 0)
       setIsLoading(true)
+      
+      // Add to history
+      addToHistory(track.mbid)
       
       // Pause and reset before changing src to avoid errors
       audioRef.current.pause()

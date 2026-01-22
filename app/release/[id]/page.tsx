@@ -77,10 +77,10 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
 
       {/* Tracklist */}
       <section>
-        <div className="grid grid-cols-[16px_1fr_auto] gap-4 px-4 py-2 border-b border-white/10 text-zinc-400 text-sm font-medium mb-4">
-          <div>#</div>
-          <div>Titre</div>
-          <div className="flex justify-end">Durée</div>
+        <div className="flex items-center gap-4 px-4 py-2 border-b border-white/10 text-zinc-400 text-sm font-medium mb-4">
+          <div className="w-4">#</div>
+          <div className="flex-1">Titre</div>
+          <div className="w-12 text-right">Durée</div>
         </div>
         <div className="flex flex-col">
           {tracks.map((track: any, index: number) => (

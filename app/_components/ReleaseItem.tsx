@@ -8,12 +8,15 @@ import {usePlayer} from "@/app/_context/PlayerContext";
 import {getReleaseAction} from "@/app/_actions/musicbrainz";
 import {useState} from "react";
 
+import { useRouter } from 'next/navigation'
+
 interface ReleaseItemProps {
   release: Release
   artistName?: string
 }
 
 export function ReleaseItem({ release, artistName: artistNameProp }: ReleaseItemProps) {
+  const router = useRouter()
   const { play, setQueue } = usePlayer()
   const [isPlayingRelease, setIsPlayingRelease] = useState(false)
   // If it's a release-group, it might have a 'releases' array, we use the first release ID for the link
@@ -61,9 +64,9 @@ export function ReleaseItem({ release, artistName: artistNameProp }: ReleaseItem
   }
 
   return (
-    <Link 
-      href={`/release/${releaseId}`}
-      className="bg-zinc-800/40 p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer"
+    <div 
+      onClick={() => router.push(`/release/${releaseId}`)}
+      className="bg-zinc-800/40 w-full max-w-56 p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer"
     >
       <div className="aspect-square mb-4 shadow-xl relative group">
         <ReleaseArt 
@@ -84,12 +87,26 @@ export function ReleaseItem({ release, artistName: artistNameProp }: ReleaseItem
       </div>
       <div className="font-bold truncate">{release.title}</div>
       <div className="flex flex-col">
-        {artistName && <div className="text-zinc-400 text-sm truncate">{artistName}</div>}
+        {artistName && (
+          <div className="text-zinc-400 text-sm truncate">
+            {release['artist-credit']?.[0]?.artist?.id ? (
+              <Link 
+                href={`/artist/${release['artist-credit'][0].artist.id}`}
+                className="hover:underline hover:text-white transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {artistName}
+              </Link>
+            ) : (
+              artistName
+            )}
+          </div>
+        )}
         <div className="text-zinc-500 text-xs truncate">
           {release.date && <>{releaseDate.toLocaleDateString('fr-FR')}{(releaseDate > oneMonthAgo ) && <div className={'text-black inline ml-2 bg-green-500 rounded-full px-2 text-xs font-bold py-0.5'}>Nouveau</div>}
           </>}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }

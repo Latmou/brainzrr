@@ -1,22 +1,26 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, Search, Settings } from 'lucide-react'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/app/_lib/utils'
+import {Home, Search, Settings} from 'lucide-react'
+import {usePathname} from 'next/navigation'
+import {cn} from '@/app/_lib/utils'
+import {useSession} from "next-auth/react"
 
-export function Sidebar({ className }: { className?: string }) {
+export function Sidebar({className}: { className?: string }) {
   const pathname = usePathname()
+  const {data: session} = useSession()
 
   const navItems = [
-    { icon: Home, label: 'Accueil', href: '/' },
-    { icon: Search, label: 'Rechercher', href: '/search' },
-    { icon: Settings, label: 'Paramètres', href: '/settings' },
+    {icon: Home, label: 'Accueil', href: '/'},
+    {icon: Search, label: 'Rechercher', href: '/search'},
+    {icon: Settings, label: 'Paramètres', href: '/settings'},
   ]
 
   return (
-    <div className={cn("w-full lg:w-64 bg-black lg:h-full flex flex-row lg:flex-col gap-2 p-2 text-zinc-400", className)}>
-      <div className="bg-zinc-900 rounded-lg p-2 lg:p-4 flex flex-row lg:flex-col gap-4 flex-1 lg:flex-none justify-around lg:justify-start">
+    <div
+      className={cn("w-full lg:w-64 bg-black lg:h-full flex flex-row lg:flex-col gap-2 p-2 text-zinc-400", className)}>
+      <div
+        className="bg-zinc-900 rounded-lg p-2 lg:p-4 flex flex-row lg:flex-col gap-4 flex-1 lg:flex-none justify-around lg:justify-start">
         {navItems.map((item) => (
           <Link
             key={item.href}
@@ -26,13 +30,23 @@ export function Sidebar({ className }: { className?: string }) {
               pathname === item.href && "text-white"
             )}
           >
-            <item.icon size={24} />
+            <item.icon size={24}/>
             <span className="inline max-lg:text-xs">{item.label}</span>
           </Link>
         ))}
       </div>
-      
-      <div className="bg-zinc-900 rounded-lg p-4 flex-1 hidden lg:flex flex-col gap-4 overflow-hidden text-zinc-500 italic text-sm">
+
+      {session && (
+        <div className="bg-zinc-900 rounded-lg p-4 hidden lg:flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-white text-sm font-semibold truncate">{session.user?.name}</div>
+            <div className="text-zinc-500 text-xs truncate">{session.user?.email}</div>
+          </div>
+        </div>
+      )}
+
+      <div
+        className="bg-zinc-900 rounded-lg p-4 flex-1 hidden lg:flex flex-col gap-4 overflow-hidden text-zinc-500 italic text-sm">
         Les fonctionnalités de bibliothèque ont été retirées.
       </div>
     </div>
