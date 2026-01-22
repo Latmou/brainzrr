@@ -1,4 +1,4 @@
-export type Artist = {
+export type ArtistDetails = {
   id: string;
   name: string;
   'sort-name'?: string;
@@ -8,9 +8,46 @@ export type Artist = {
   'type-id'?: string;
 };
 
+export type LifeSpan = {
+  begin?: string | null;
+  end?: string | null;
+  ended?: boolean;
+};
+
+export type ReleaseGroup = {
+  id: string;
+  title: string;
+  'primary-type'?: string;
+  'primary-type-id'?: string;
+  'secondary-types'?: string[];
+  'secondary-type-ids'?: string[];
+  'first-release-date'?: string;
+  disambiguation?: string;
+  releases?: Release[];
+};
+
+export type ArtistPageObject = {
+  id: string;
+  name: string;
+  'sort-name'?: string;
+  type?: string;
+  'type-id'?: string;
+  gender?: string | null;
+  'gender-id'?: string | null;
+  country?: string;
+  area?: Area;
+  'begin-area'?: Area | null;
+  'end-area'?: Area | null;
+  'life-span'?: LifeSpan;
+  disambiguation?: string;
+  ipis?: string[];
+  isnis?: string[];
+  'release-groups'?: ReleaseGroup[];
+}
+
 export type ArtistCredit = {
   name: string;
-  artist: Artist;
+  artist: ArtistDetails;
   joinphrase: string;
 };
 
@@ -108,4 +145,5 @@ export type Release = {
   media?: Media[];
   'cover-art-url'?: string | null;
   'label-info'?: LabelInfo[];
+  'release-group'?: ReleaseGroup;
 };

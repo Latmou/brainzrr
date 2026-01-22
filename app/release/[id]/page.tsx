@@ -43,14 +43,16 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
           </h1>
           <div className={'mb-4 md:mb-6 gap-2 text-zinc-400 text-xs'}>
             {release['label-info'] && release['label-info'].length > 0 && (
-              release['label-info'].map((info, index) => (
-                <span key={info.label?.id || index}>
-                  <Tag size={10} className={'inline'}/>&nbsp;
-                  {info.label?.name}
-                </span>
-              ))
+              <>
+                <Tag size={10} className={'inline mr-2'}/>
+                {release['label-info'].map((info, index) => (
+                  <span key={info.label?.id || index}>
+                    {index > 0 && <>, </>}
+                    {info.label?.name}
+                  </span>
+                ))}
+              </>
             )}
-            {release.disambiguation && <span className="italic"> • "{release.disambiguation}"</span>}
 
           </div>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-2 gap-y-1 text-sm">

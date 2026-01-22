@@ -1,4 +1,4 @@
-import {RecordingDetail, Release} from "@/app/_types/MusicBrainz";
+import {ArtistDetails, ArtistPageObject, RecordingDetail, Release, ReleaseGroup} from "@/app/_types/MusicBrainz";
 
 const BASE_URL = 'https://musicbrainz.org';
 const USER_AGENT = 'brainzrr/0.1.0 ( https://github.com/your-username/brainzrr )';
@@ -41,7 +41,12 @@ export const musicBrainzService = {
   },
 
   async getArtist(mbid: string) {
-    return fetchMB(`artist/${mbid}`, { inc: ['releases', 'recordings'].join('+') });
+    const artist = (await fetchMB(`artist/${mbid}`))
+    const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits`))['release-groups'] as ReleaseGroup[];
+    return {
+      ...artist,
+      'release-groups': releaseGroups,
+    } as ArtistPageObject;
   },
 
   async searchReleaseGroup(query: string) {
