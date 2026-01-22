@@ -32,9 +32,9 @@ export default function Loading() {
       <div className="flex flex-col gap-8">
         <section>
           <div className="h-8 w-32 bg-zinc-800 rounded mb-4"></div>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex overflow-x-auto sm:flex-wrap gap-4 no-scrollbar">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="aspect-square bg-zinc-800 rounded-lg"></div>
+              <div key={i} className="w-48 aspect-square bg-zinc-800 rounded-lg shrink-0"></div>
             ))}
           </div>
         </section>

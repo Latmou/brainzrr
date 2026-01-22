@@ -20,7 +20,6 @@ export function ReleaseArt({releaseId, title, className, fallbackSize = 48}: Rel
   useEffect(() => {
     const loadArt = async () => {
       const cachedUrl = await cacheService.get<string>(`release_art_${releaseId}`)
-      console.log(cachedUrl)
       if (cachedUrl) {
         setCoverUrl(cachedUrl)
       } else {

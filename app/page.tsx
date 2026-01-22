@@ -1,11 +1,12 @@
 import {getHistory} from "@/app/_actions/history";
 import {musicBrainzService} from "@/app/_lib/musicbrainz";
 import {ReleaseItem} from "@/app/_components/ReleaseItem";
+import {HorizontalScroller} from "@/app/_components/HorizontalScroller";
 import {auth} from "@/auth";
 
 export default async function Home() {
   const session = await auth();
-  const historyReleaseIds = await getHistory();
+  const historyReleaseIds = await getHistory(20);
 
   // Fetch release details for each ID in history
   const historyReleases = await Promise.all(
@@ -33,14 +34,13 @@ export default async function Home() {
       )}
 
       {session && validReleases.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Récemment écoutés</h2>
-          <div className="flex flex-wrap gap-4  items-center">
-            {validReleases.map((release: any) => (
-              <ReleaseItem release={release} key={release.id}/>
-            ))}
-          </div>
-        </section>
+        <HorizontalScroller title="Récemment écoutés">
+          {validReleases.map((release: any) => (
+            <div key={release.id} className="w-48 flex-shrink-0">
+              <ReleaseItem release={release}/>
+            </div>
+          ))}
+        </HorizontalScroller>
       )}
 
       {session && validReleases.length === 0 && (

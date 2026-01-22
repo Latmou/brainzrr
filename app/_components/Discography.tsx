@@ -4,6 +4,7 @@ import {useState} from 'react'
 import {ReleaseGroup} from '@/app/_types/MusicBrainz'
 import {ReleaseGroupItem} from './ReleaseGroupItem'
 import {ChevronDown, ChevronRight} from 'lucide-react'
+import {HorizontalScroller} from './HorizontalScroller'
 
 interface DiscographyProps {
   artistName: string
@@ -29,34 +30,35 @@ export function Discography({artistName, categories}: DiscographyProps) {
   return (
     <div className="flex flex-col gap-8">
       {categories.albums.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Albums</h2>
-          <div className="flex flex-wrap gap-4 items-center">
-            {categories.albums.map((releaseGroup) => (
+        <HorizontalScroller
+          title="Albums"
+          containerClassName="sm:flex-wrap sm:overflow-x-visible"
+        >
+          {categories.albums.map((releaseGroup) => (
+            <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
               <ReleaseGroupItem
-                key={releaseGroup.id}
                 releaseGroup={releaseGroup}
                 artistName={artistName}
               />
-            ))}
-          </div>
-        </section>
+            </div>
+          ))}
+        </HorizontalScroller>
       )}
 
       {categories.ep.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">EPs</h2>
-          <div className="flex flex-wrap gap-4">
-            {categories.ep.map((releaseGroup) => (
-              <div key={releaseGroup.id}>
-                <ReleaseGroupItem
-                  releaseGroup={releaseGroup}
-                  artistName={artistName}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+        <HorizontalScroller
+          title="EPs"
+          containerClassName="sm:flex-wrap sm:overflow-x-visible"
+        >
+          {categories.ep.map((releaseGroup) => (
+            <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
+              <ReleaseGroupItem
+                releaseGroup={releaseGroup}
+                artistName={artistName}
+              />
+            </div>
+          ))}
+        </HorizontalScroller>
       )}
 
       {hasSecondary && (
@@ -72,67 +74,67 @@ export function Discography({artistName, categories}: DiscographyProps) {
           {showSecondary && (
             <>
               {categories.lives.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold mb-4">Lives</h2>
-                  <div className="flex flex-wrap gap-4">
-                    {categories.lives.map((releaseGroup) => (
-                      <div key={releaseGroup.id}>
-                        <ReleaseGroupItem
-                          releaseGroup={releaseGroup}
-                          artistName={artistName}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <HorizontalScroller
+                  title="Lives"
+                  containerClassName="sm:flex-wrap sm:overflow-x-visible"
+                >
+                  {categories.lives.map((releaseGroup) => (
+                    <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
+                      <ReleaseGroupItem
+                        releaseGroup={releaseGroup}
+                        artistName={artistName}
+                      />
+                    </div>
+                  ))}
+                </HorizontalScroller>
               )}
 
               {categories.compilations.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold mb-4">Compilations</h2>
-                  <div className="flex flex-wrap gap-4">
-                    {categories.compilations.map((releaseGroup) => (
-                      <div key={releaseGroup.id}>
-                        <ReleaseGroupItem
-                          releaseGroup={releaseGroup}
-                          artistName={artistName}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <HorizontalScroller
+                  title="Compilations"
+                  containerClassName="sm:flex-wrap sm:overflow-x-visible"
+                >
+                  {categories.compilations.map((releaseGroup) => (
+                    <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
+                      <ReleaseGroupItem
+                        releaseGroup={releaseGroup}
+                        artistName={artistName}
+                      />
+                    </div>
+                  ))}
+                </HorizontalScroller>
               )}
 
               {categories.singles.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold mb-4">Singles</h2>
-                  <div className="flex flex-wrap gap-4">
-                    {categories.singles.map((releaseGroup) => (
-                      <div key={releaseGroup.id}>
-                        <ReleaseGroupItem
-                          releaseGroup={releaseGroup}
-                          artistName={artistName}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <HorizontalScroller
+                  title="Singles"
+                  containerClassName="sm:flex-wrap sm:overflow-x-visible"
+                >
+                  {categories.singles.map((releaseGroup) => (
+                    <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
+                      <ReleaseGroupItem
+                        releaseGroup={releaseGroup}
+                        artistName={artistName}
+                      />
+                    </div>
+                  ))}
+                </HorizontalScroller>
               )}
 
               {categories.other.length > 0 && (
-                <section>
-                  <h2 className="text-2xl font-bold mb-4">Autre</h2>
-                  <div className="flex flex-wrap gap-4">
-                    {categories.other.map((releaseGroup) => (
-                      <div key={releaseGroup.id}>
-                        <ReleaseGroupItem
-                          releaseGroup={releaseGroup}
-                          artistName={artistName}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </section>
+                <HorizontalScroller
+                  title="Autre"
+                  containerClassName="sm:flex-wrap sm:overflow-x-visible"
+                >
+                  {categories.other.map((releaseGroup) => (
+                    <div key={releaseGroup.id} className="w-48 flex-shrink-0 sm:flex-shrink">
+                      <ReleaseGroupItem
+                        releaseGroup={releaseGroup}
+                        artistName={artistName}
+                      />
+                    </div>
+                  ))}
+                </HorizontalScroller>
               )}
             </>
           )}

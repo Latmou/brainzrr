@@ -15,7 +15,7 @@ export function ArtistItem({ artist }: ArtistItemProps) {
   return (
     <Link 
       href={`/artist/${artist.id}`}
-      className="bg-zinc-800/40 w-full max-w-56 p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer relative"
+      className="bg-zinc-800/40 w-full p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer relative block"
     >
       <ArtistArt 
         artistId={artist.id} 

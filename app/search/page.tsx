@@ -1,70 +1,61 @@
 'use client'
 
-import {useEffect, useState} from 'react'
-import {Search as SearchIcon} from 'lucide-react'
+import {Suspense, useEffect, useState} from 'react'
+import {Search as SearchIcon, X} from 'lucide-react'
 import {RecordingItem} from '@/app/_components/RecordingItem'
 import {ReleaseItem} from '@/app/_components/ReleaseItem'
 import {ArtistItem} from '@/app/_components/ArtistItem'
-import {cacheService} from '@/app/_lib/cache'
+import {HorizontalScroller} from '@/app/_components/HorizontalScroller'
+import {SearchSkeleton} from '@/app/_components/SearchSkeleton'
 import {search} from "@/app/_actions/search";
+import {useSearchParams, useRouter} from 'next/navigation'
 
-export default function SearchPage() {
-  const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+function SearchContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialQuery = searchParams.get('q') || ''
+  
+  const [query, setQuery] = useState(initialQuery)
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery)
   const [results, setResults] = useState<any>({artists: [], recordings: [], releases: []})
   const [isLoading, setIsLoading] = useState(false)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
-  // Debounce query
+  // Sync state with URL when it changes (back/forward navigation)
   useEffect(() => {
-    if (!query) {
-      setDebouncedQuery('')
-      return
-    }
+    const q = searchParams.get('q') || ''
+    setQuery(q)
+    setDebouncedQuery(q)
+  }, [searchParams])
+
+  // Debounce query and update URL
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query)
+
+      // Update URL
+      const params = new URLSearchParams(searchParams.toString())
+      if (query) {
+        params.set('q', query)
+      } else {
+        params.delete('q')
+      }
+
+      const newPath = query ? `/search?${params.toString()}` : '/search'
+      // Use replace to avoid polluting history with every keystroke
+      // but still allowing it to be in the current entry
+      router.replace(newPath)
     }, 500)
 
     return () => clearTimeout(timer)
-  }, [query])
-
-  // Load from cache on mount
-  useEffect(() => {
-    const loadCache = async () => {
-      const savedQuery = await cacheService.get<string>('search_query')
-      const savedResults = await cacheService.get<any>('search_results')
-
-      if (savedQuery) {
-        setQuery(savedQuery)
-        setDebouncedQuery(savedQuery)
-      }
-      if (savedResults) {
-        setResults(savedResults)
-      }
-      // Use a small delay to ensure initial values are set before we allow searches
-      setTimeout(() => setIsInitialLoad(false), 100)
-    }
-
-    if (typeof window !== 'undefined') {
-      loadCache()
-    }
-  }, [])
-
-  // Save to cache when query or results change
-  useEffect(() => {
-    if (!isInitialLoad && typeof window !== 'undefined') {
-      cacheService.set('search_query', query)
-      cacheService.set('search_results', results)
-    }
-  }, [query, results, isInitialLoad])
+  }, [query, router, searchParams])
 
   useEffect(() => {
-    if (!isInitialLoad && debouncedQuery) {
+    if (debouncedQuery) {
       performSearch(debouncedQuery)
-    } else if (!isInitialLoad && !debouncedQuery) {
+    } else {
       setResults({artists: [], recordings: [], releases: []})
     }
-  }, [debouncedQuery, isInitialLoad])
+  }, [debouncedQuery])
 
   const performSearch = async (searchQuery: string) => {
     if (!searchQuery) return
@@ -97,24 +88,32 @@ export default function SearchPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Artistes, morceaux ou releases"
-          className="w-full bg-zinc-800 border-none rounded-full py-3 pl-10 pr-4 text-white focus:ring-2 focus:ring-white outline-none"
+          className="w-full bg-zinc-800 border-none rounded-full py-3 pl-10 pr-10 text-white focus:ring-2 focus:ring-white outline-none"
         />
+        {query && (
+          <button
+            type="button"
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+          >
+            <X size={20}/>
+          </button>
+        )}
       </form>
 
-      {isLoading && <div className="text-zinc-400">Recherche en cours...</div>}
+      {isLoading && <SearchSkeleton />}
 
       {!isLoading && (
         <div className="flex flex-col gap-10">
           {/* Artistes */}
           {results.artists.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Artistes</h2>
-              <div className="flex flex-wrap gap-4 items-center">
-                {results.artists.slice(0, 5).map((artist: any) => (
-                  <ArtistItem artist={artist} key={artist.id}/>
-                ))}
-              </div>
-            </section>
+            <HorizontalScroller title="Artistes">
+              {results.artists.slice(0, 10).map((artist: any) => (
+                <div key={artist.id} className="w-48 flex-shrink-0">
+                  <ArtistItem artist={artist}/>
+                </div>
+              ))}
+            </HorizontalScroller>
           )}
 
           {/* Morceaux */}
@@ -135,18 +134,25 @@ export default function SearchPage() {
 
           {/* Releases */}
           {results.releases.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-4">Releases</h2>
-              <div className="flex flex-wrap gap-4 items-center">
-                {results.releases.slice(0, 5).map((release: any) => (
-                  <ReleaseItem release={release} key={release.id}/>
-                ))}
-              </div>
-            </section>
+            <HorizontalScroller title="Releases">
+              {results.releases.slice(0, 10).map((release: any) => (
+                <div key={release.id} className="w-48 flex-shrink-0">
+                  <ReleaseItem release={release}/>
+                </div>
+              ))}
+            </HorizontalScroller>
           )}
 
         </div>
       )}
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchSkeleton />}>
+      <SearchContent />
+    </Suspense>
   )
 }

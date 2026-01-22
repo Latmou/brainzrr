@@ -22,7 +22,7 @@ export async function addToHistory(recordingId: string) {
   }
 }
 
-export async function getHistory() {
+export async function getHistory(limit = 20) {
   const session = await auth()
   if (!session?.user?.id) return []
 
@@ -37,7 +37,7 @@ export async function getHistory() {
         }
       },
       orderBy: { playedAt: 'desc' },
-      take: 50
+      take: 100 // Fetch more to ensure we get enough unique releases after grouping
     })
 
     // Group by releaseId and return unique releases
@@ -48,6 +48,7 @@ export async function getHistory() {
       if (item.recording.releaseId && !releaseIds.has(item.recording.releaseId)) {
         releaseIds.add(item.recording.releaseId)
         uniqueReleases.push(item.recording.releaseId)
+        if (uniqueReleases.length >= limit) break
       }
     }
 
