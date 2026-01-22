@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev":  "bunx prisma generate",
-    "prebuild": "bunx prisma migrate deploy && bunx prisma generate",
+    "install-ytdlp": "node node_modules/ytdlp-nodejs/dist/downloadYtdlp.js",
+    "predev": "bun run install-ytdlp && bunx prisma generate",
+    "prebuild": "bun run install-ytdlp && bunx prisma migrate deploy && bunx prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
