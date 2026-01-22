@@ -8,6 +8,7 @@ import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
 import Link from 'next/link'
 import { ReleaseArt } from './ReleaseArt'
+import { Slider } from './Slider'
 
 export function PlayerBar({ className }: { className?: string }) {
   const { 
@@ -28,31 +29,6 @@ export function PlayerBar({ className }: { className?: string }) {
     const x = e.clientX - rect.left
     const percentage = Math.max(0, Math.min(1, x / rect.width))
     seek(percentage * duration)
-  }
-
-  const handleProgressMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!duration) return
-    
-    const updateProgress = (clientX: number) => {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = clientX - rect.left
-      const percentage = Math.max(0, Math.min(1, x / rect.width))
-      seek(percentage * duration)
-    }
-
-    updateProgress(e.clientX)
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      updateProgress(moveEvent.clientX)
-    }
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
   }
 
   return (
@@ -177,19 +153,14 @@ export function PlayerBar({ className }: { className?: string }) {
           className="hidden lg:flex items-center gap-2 w-full max-w-md"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="text-[10px] text-zinc-400 w-8 text-right">{formatTime(currentTime)}</div>
-          <div 
-            className="h-1 flex-1 bg-zinc-800 rounded-full group cursor-pointer relative"
-            onMouseDown={handleProgressMouseDown}
-          >
-            <div 
-              className="h-full bg-white group-hover:bg-green-500 rounded-full relative" 
-              style={{ width: `${duration ? (currentTime / (duration ?? 1)) * 100 : 0}%` }}
-            >
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full opacity-0 group-hover:opacity-100 shadow-md translate-x-1/2" />
-            </div>
-          </div>
-          <div className="text-[10px] text-zinc-400 w-8">{formatTime(duration)}</div>
+          <div className="text-[10px] text-zinc-400 w-8 text-right font-medium">{formatTime(currentTime)}</div>
+          <Slider 
+            value={duration ? currentTime / duration : 0}
+            onChange={(val) => seek(val * duration)}
+            activeColor="group-hover:bg-green-500 bg-zinc-400"
+            thumbSize="w-2 h-2"
+          />
+          <div className="text-[10px] text-zinc-400 w-8 font-medium">{formatTime(duration)}</div>
         </div>
       </div>
 
@@ -198,20 +169,21 @@ export function PlayerBar({ className }: { className?: string }) {
         className="hidden lg:flex w-1/3 items-center justify-end gap-3 text-zinc-400"
         onClick={(e) => e.stopPropagation()}
       >
-        <ListMusic size={20} className="hover:text-white cursor-pointer" />
-        <div className="flex items-center gap-2 w-32 group">
+        <ListMusic size={20} className="hover:text-white cursor-pointer transition-colors" />
+        <div 
+          className="flex items-center gap-2 w-32 group"
+          onWheel={(e) => {
+            e.stopPropagation()
+            const delta = e.deltaY > 0 ? -0.05 : 0.05
+            setVolume(Math.max(0, Math.min(1, volume + delta)))
+          }}
+        >
           <Volume2 size={20} className="group-hover:text-white transition-colors" />
-          <input 
-            type="range" 
-            min="0" 
-            max="1" 
-            step="0.01" 
+          <Slider 
             value={volume}
-            onChange={(e) => {
-              e.stopPropagation()
-              setVolume(parseFloat(e.target.value))
-            }}
-            className="w-full h-1 bg-zinc-800 rounded-full accent-white hover:accent-green-500 cursor-pointer"
+            onChange={setVolume}
+            activeColor="bg-white group-hover:bg-green-500"
+            thumbSize="w-2 h-2"
           />
         </div>
       </div>

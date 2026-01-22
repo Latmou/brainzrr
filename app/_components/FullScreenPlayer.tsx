@@ -8,6 +8,7 @@ import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
 import Link from 'next/link'
 import { ReleaseArt } from './ReleaseArt'
+import { Slider } from './Slider'
 
 export function FullScreenPlayer() {
   const { 
@@ -22,31 +23,6 @@ export function FullScreenPlayer() {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
     return `${minutes}:${String(seconds).padStart(2, '0')}`
-  }
-
-  const handleProgressMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!duration) return
-    
-    const updateProgress = (clientX: number) => {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const x = clientX - rect.left
-      const percentage = Math.max(0, Math.min(1, x / rect.width))
-      seek(percentage * duration)
-    }
-
-    updateProgress(e.clientX)
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      updateProgress(moveEvent.clientX)
-    }
-
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
-    }
-
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
   }
 
   return (
@@ -119,18 +95,15 @@ export function FullScreenPlayer() {
 
       {/* Progress Bar */}
       <div className="max-w-2xl mx-auto w-full mb-8">
-        <div 
-          className="h-1.5 bg-zinc-800 rounded-full group cursor-pointer relative mb-2"
-          onMouseDown={handleProgressMouseDown}
-        >
-          <div 
-            className="h-full bg-white group-hover:bg-green-500 rounded-full relative" 
-            style={{ width: `${duration ? (currentTime / duration) * 100 : 0}%` }}
-          >
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-md translate-x-1/2" />
-          </div>
+        <div className="mb-4">
+          <Slider 
+            value={duration ? currentTime / duration : 0}
+            onChange={(val) => seek(val * duration)}
+            activeColor="group-hover:bg-green-500 bg-zinc-400"
+            thumbSize="w-3 h-3"
+          />
         </div>
-        <div className="flex items-center justify-between text-xs text-zinc-400 font-medium">
+        <div className="flex items-center justify-between text-xs text-zinc-400 font-medium tracking-wider">
           <div>{formatTime(currentTime)}</div>
           <div>{formatTime(duration)}</div>
         </div>
@@ -173,16 +146,20 @@ export function FullScreenPlayer() {
       </div>
 
       {/* Footer / Volume */}
-      <div className="max-w-2xl mx-auto w-full flex items-center gap-4 text-zinc-400">
-        <Volume2 size={20} />
-        <input 
-          type="range" 
-          min="0" 
-          max="1" 
-          step="0.01" 
+      <div 
+        className="max-w-2xl mx-auto w-full flex items-center gap-4 text-zinc-400 group"
+        onWheel={(e) => {
+          e.stopPropagation()
+          const delta = e.deltaY > 0 ? -0.05 : 0.05
+          setVolume(Math.max(0, Math.min(1, volume + delta)))
+        }}
+      >
+        <Volume2 size={20} className="group-hover:text-white transition-colors" />
+        <Slider 
           value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-full h-1 bg-zinc-800 rounded-full accent-white hover:accent-green-500 cursor-pointer"
+          onChange={setVolume}
+          activeColor="bg-white group-hover:bg-green-500"
+          thumbSize="w-3 h-3"
         />
       </div>
     </div>
