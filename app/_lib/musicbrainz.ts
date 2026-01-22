@@ -83,7 +83,7 @@ export const musicBrainzService = {
   },
 
   async getRecording(mbid: string) {
-    return (await fetchMB(`recording/${mbid}`,  { inc: ['artist-credits', 'labels'].join('+') }) as RecordingDetail);
+    return (await fetchMB(`recording/${mbid}`,  { inc: ['artist-credits'].join('+') }) as RecordingDetail);
   },
 
   async searchArea(query: string) {

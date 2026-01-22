@@ -3,6 +3,7 @@ import { Calendar, User, Tag } from 'lucide-react'
 import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseArt } from '@/app/_components/ReleaseArt'
+import { Pre } from '@/app/_components/Pre'
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -97,7 +98,8 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
         </div>
       </section>
 
-      <pre className={'text-xs'}>{JSON.stringify(release, null, 2)}</pre>
+      <hr className="mt-8 -mb-4 border-white/10"/>
+      <Pre data={release} />
     </div>
   )
 }

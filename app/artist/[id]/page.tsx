@@ -37,7 +37,7 @@ export default async function ArtistPage({ params }: { params: Promise<{ id: str
       <section>
         <h2 className="text-2xl font-bold mb-4">Discographie</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-          {releases.slice(0, 10).map((release: any) => (
+          {releases.slice(0).map((release: any) => (
             <ReleaseItem 
               key={release.id} 
               release={release} 

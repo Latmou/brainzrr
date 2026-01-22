@@ -9,45 +9,70 @@ import { ReleaseItem } from '@/app/_components/ReleaseItem'
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [results, setResults] = useState<any>({ artists: [], recordings: [], releases: [] })
   const [isLoading, setIsLoading] = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+
+  // Debounce query
+  useEffect(() => {
+    if (!query) {
+      setDebouncedQuery('')
+      return
+    }
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [query])
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedQuery = localStorage.getItem('search_query')
-    const savedResults = localStorage.getItem('search_results')
+    if (typeof window !== 'undefined') {
+      const savedQuery = localStorage.getItem('search_query')
+      const savedResults = localStorage.getItem('search_results')
 
-    if (savedQuery) {
-      setQuery(savedQuery)
-    }
-    if (savedResults) {
-      try {
-        setResults(JSON.parse(savedResults))
-      } catch (e) {
-        console.error('Failed to parse saved search results', e)
+      if (savedQuery) {
+        setQuery(savedQuery)
+        setDebouncedQuery(savedQuery)
       }
+      if (savedResults) {
+        try {
+          setResults(JSON.parse(savedResults))
+        } catch (e) {
+          console.error('Failed to parse saved search results', e)
+        }
+      }
+      // Use a small delay to ensure initial values are set before we allow searches
+      setTimeout(() => setIsInitialLoad(false), 100)
     }
   }, [])
 
   // Save to localStorage when query or results change
   useEffect(() => {
-    if (query) {
+    if (!isInitialLoad && typeof window !== 'undefined') {
       localStorage.setItem('search_query', query)
-    }
-    if (results.artists.length > 0 || results.recordings.length > 0 || results.releases.length > 0) {
       localStorage.setItem('search_results', JSON.stringify(results))
     }
-  }, [query, results])
+  }, [query, results, isInitialLoad])
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!query) return
+  useEffect(() => {
+    if (!isInitialLoad && debouncedQuery) {
+      performSearch(debouncedQuery)
+    } else if (!isInitialLoad && !debouncedQuery) {
+      setResults({ artists: [], recordings: [], releases: [] })
+    }
+  }, [debouncedQuery, isInitialLoad])
+
+  const performSearch = async (searchQuery: string) => {
+    if (!searchQuery) return
     setIsLoading(true)
     try {
       const [artists, recordings, releases] = await Promise.all([
-        musicBrainzService.searchArtist(query),
-        musicBrainzService.searchRecording(query),
-        musicBrainzService.searchRelease(query)
+        musicBrainzService.searchArtist(searchQuery),
+        musicBrainzService.searchRecording(searchQuery),
+        musicBrainzService.searchRelease(searchQuery)
       ])
       setResults({
         artists: artists.artists || [],
@@ -59,6 +84,11 @@ export default function SearchPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault()
+    performSearch(query)
   }
 
   return (
