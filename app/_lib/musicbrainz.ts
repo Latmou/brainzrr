@@ -58,7 +58,7 @@ export const musicBrainzService = {
   },
 
   async getArtist(mbid: string) {
-    const artist = (await fetchMB(`artist/${mbid}`, { inc: ['url-rels', 'artist-rels', 'tags', 'genres'].join('+') }))
+    const artist = (await fetchMB(`artist/${mbid}`, { inc: ['url-rels', 'artist-rels', 'label-rels', 'tags', 'genres'].join('+') }))
     const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits&limit=100`))['release-groups'] as ReleaseGroup[];
     const result = {
       ...artist,
@@ -242,7 +242,13 @@ export const musicBrainzService = {
   },
 
   async getLabel(mbid: string) {
-    return fetchMB(`label/${mbid}`);
+    const label = await fetchMB(`label/${mbid}`, { inc: ['url-rels', 'tags', 'genres'].join('+') });
+    const releases = await fetchMB('release', { label: mbid, limit: '100', inc: ['artist-credits', 'release-groups'].join('+') });
+    
+    return {
+      ...label,
+      releases: releases?.releases || []
+    };
   },
 
   async getArtistsByTag(tag: string) {

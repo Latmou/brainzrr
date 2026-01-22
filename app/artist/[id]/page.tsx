@@ -1,10 +1,36 @@
 import {musicBrainzService} from '@/app/_lib/musicbrainz'
 import {wikipediaService} from '@/app/_lib/wikipedia'
-import {Globe, Youtube, Instagram, Twitter, Music2, Tag as TagIcon} from 'lucide-react'
+import {Globe, History, Instagram, Music2, Twitter, Users, Youtube} from 'lucide-react'
 import {Discography} from '@/app/_components/Discography'
 import {Pre} from "@/app/_components/Pre";
 import Link from 'next/link'
-import { ArtistArt } from '@/app/_components/ArtistArt'
+import {ArtistArt} from '@/app/_components/ArtistArt'
+
+function RelationGroup({title, icon: Icon, items}: {
+  title: string,
+  icon: any,
+  items: { id: string, name: string, type: 'artist' | 'label' }[]
+}) {
+  return (
+    <div className="bg-zinc-800/40 max-w-240 p-4 rounded-lg border border-white/5">
+      <div className="flex items-center gap-2 mb-3 text-zinc-400">
+        <Icon size={18}/>
+        <h3 className="text-sm font-bold uppercase tracking-wider">{title}</h3>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {items.map(item => (
+          <Link
+            key={item.id}
+            href={`/${item.type}/${item.id}`}
+            className="text-sm font-medium bg-zinc-700/50 hover:bg-zinc-600 px-3 py-1 rounded-full text-zinc-200 transition-colors border border-white/5"
+          >
+            {item.name}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default async function ArtistPage({params}: { params: Promise<{ id: string }> }) {
   const {id} = await params
@@ -33,13 +59,33 @@ export default async function ArtistPage({params}: { params: Promise<{ id: strin
   }
 
   // Filter useful links
-  const socialLinks = artist.relations?.filter(rel => 
+  const socialLinks = artist.relations?.filter(rel =>
     ['official homepage', 'social network', 'youtube', 'instagram', 'twitter', 'facebook', 'bandcamp', 'soundcloud'].includes(rel.type)
   ).map(rel => ({
     type: rel.type,
     url: rel.url?.resource || '',
     label: rel.url?.resource.replace(/^https?:\/\/(www\.)?/, '').split('/')[0] || rel.type
   })) || []
+
+  // Extract other relations
+  const relations = artist.relations || []
+
+  const getUniqueItems = (rels: any[], type: 'artist' | 'label') => {
+    const seen = new Set()
+    return rels
+      .map(r => {
+        const obj = type === 'artist' ? r.artist : r.label
+        return {id: obj.id, name: obj.name, type}
+      })
+      .filter(item => {
+        if (seen.has(item.id)) return false
+        seen.add(item.id)
+        return true
+      })
+  }
+
+  const members = getUniqueItems(relations.filter(rel => rel.type === 'member of band' && rel.direction === 'backward' && rel.artist), 'artist')
+  const nameChanges = getUniqueItems(relations.filter(rel => (rel.type === 'artist rename' || rel.type === 'is person') && rel.artist), 'artist')
 
   const categories = releases.reduce((acc, release) => {
     const secondaryTypes = release['secondary-types'] ?? []
@@ -123,16 +169,16 @@ export default async function ArtistPage({params}: { params: Promise<{ id: strin
                 if (link.type.includes('instagram')) Icon = Instagram
                 if (link.type.includes('twitter')) Icon = Twitter
                 if (link.type.includes('bandcamp') || link.type.includes('soundcloud')) Icon = Music2
-                
+
                 return (
-                  <a 
-                    key={idx} 
-                    href={link.url} 
-                    target="_blank" 
+                  <a
+                    key={idx}
+                    href={link.url}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors bg-zinc-800/50 px-2.5 py-1 rounded-full border border-white/5"
                   >
-                    <Icon size={14} />
+                    <Icon size={14}/>
                     <span>{link.label}</span>
                   </a>
                 )
@@ -150,10 +196,22 @@ export default async function ArtistPage({params}: { params: Promise<{ id: strin
         </div>
       )}
 
-      <Discography artistName={artist.name} categories={categories} />
+      {/* Relations Section */}
+      {(members.length > 0 || nameChanges.length > 0) && (
+        <div className="flex flex-col gap-4">
+          {members.length > 0 && (
+            <RelationGroup title="Membres" icon={Users} items={members}/>
+          )}
+          {nameChanges.length > 0 && (
+            <RelationGroup title="Autres noms" icon={History} items={nameChanges}/>
+          )}
+        </div>
+      )}
+
+      <Discography artistName={artist.name} categories={categories}/>
 
       <hr className="mt-8 -mb-4 border-white/10"/>
-      <Pre data={artist} />
+      <Pre data={artist}/>
     </div>
   )
 }

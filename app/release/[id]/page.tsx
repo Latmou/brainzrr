@@ -50,7 +50,13 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
                 {release['label-info'].map((info, index) => (
                   <span key={info.label?.id || index}>
                     {index > 0 && <>, </>}
-                    {info.label?.name}
+                    {info.label?.id ? (
+                      <Link href={`/label/${info.label.id}`} className="hover:underline">
+                        {info.label.name}
+                      </Link>
+                    ) : (
+                      info.label?.name
+                    )}
                   </span>
                 ))}
               </>

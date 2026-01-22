@@ -37,6 +37,7 @@ export type Relation = {
     resource: string;
   };
   artist?: ArtistDetails;
+  label?: Label;
   ended: boolean;
   begin: string | null;
   end: string | null;

@@ -1,6 +1,7 @@
 import {musicBrainzService} from '@/app/_lib/musicbrainz'
 import {Tag} from 'lucide-react'
 import {ArtistItem} from '@/app/_components/ArtistItem'
+import {HorizontalScroller} from "@/app/_components/HorizontalScroller";
 
 export default async function TagPage({params}: { params: Promise<{ tag: string }> }) {
   const {tag} = await params
@@ -31,7 +32,9 @@ export default async function TagPage({params}: { params: Promise<{ tag: string 
           </h2>
           <div className="flex flex-wrap gap-4">
             {artists.map((artist: any) => (
-              <ArtistItem artist={artist} key={artist.id}/>
+              <div className={'w-48'}>
+                <ArtistItem artist={artist} key={artist.id}/>
+              </div>
             ))}
           </div>
         </section>

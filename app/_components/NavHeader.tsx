@@ -12,9 +12,9 @@ export function NavHeader() {
 
   return (
     <header className="h-16 flex items-center justify-between px-6 backdrop-blur-md sticky top-0 z-40 border-b border-white/5">
-      <div className="font-bold text-xl">
+      <Link href={'/'} className="font-bold text-xl">
         Brainzrr
-      </div>
+      </Link>
 
       <div className="flex items-center gap-4">
         {session ? (
