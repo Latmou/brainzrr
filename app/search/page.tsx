@@ -6,6 +6,7 @@ import { musicBrainzService } from '@/app/_lib/musicbrainz'
 import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseItem } from '@/app/_components/ReleaseItem'
+import { ArtistItem } from '@/app/_components/ArtistItem'
 import { cacheService } from '@/app/_lib/cache'
 
 export default function SearchPage() {
@@ -115,22 +116,7 @@ export default function SearchPage() {
               <h2 className="text-2xl font-bold mb-4">Artistes</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
                 {results.artists.slice(0, 5).map((artist: any) => (
-                  <Link 
-                    key={artist.id} 
-                    href={`/artist/${artist.id}`}
-                    className="bg-zinc-800/40 p-4 rounded-lg hover:bg-zinc-800 transition-colors group cursor-pointer relative"
-                  >
-                    <button
-                      className="absolute right-6 top-6 bg-green-500 rounded-full p-2 text-black opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-20"
-                    >
-                      <Plus size={20} />
-                    </button>
-                    <div className="aspect-square bg-zinc-700 rounded-full mb-4 shadow-xl flex items-center justify-center">
-                      <User size={48} className="text-zinc-500" />
-                    </div>
-                    <div className="font-bold truncate">{artist.name}</div>
-                    <div className="text-zinc-400 text-sm">Artiste</div>
-                  </Link>
+                  <ArtistItem key={artist.id} artist={artist} />
                 ))}
               </div>
             </section>

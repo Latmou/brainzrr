@@ -26,6 +26,34 @@ export type ReleaseGroup = {
   releases?: Release[];
 };
 
+export type Relation = {
+  type: string;
+  'type-id': string;
+  direction: string;
+  'target-type': string;
+  'target-credit': string;
+  url?: {
+    id: string;
+    resource: string;
+  };
+  artist?: ArtistDetails;
+  ended: boolean;
+  begin: string | null;
+  end: string | null;
+};
+
+export type Tag = {
+  count: number;
+  name: string;
+};
+
+export type Genre = {
+  id: string;
+  name: string;
+  disambiguation?: string;
+  count: number;
+};
+
 export type ArtistPageObject = {
   id: string;
   name: string;
@@ -43,6 +71,9 @@ export type ArtistPageObject = {
   ipis?: string[];
   isnis?: string[];
   'release-groups'?: ReleaseGroup[];
+  relations?: Relation[];
+  tags?: Tag[];
+  genres?: Genre[];
 }
 
 export type ArtistCredit = {

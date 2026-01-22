@@ -15,6 +15,16 @@ const nextConfig: NextConfig = {
         hostname: 'coverartarchive.org',
         port: '',
         pathname: '/**',
+      }, {
+        protocol: 'https',
+        hostname: '*.wikipedia.org',
+        port: '',
+        pathname: '/**',
+      }, {
+        protocol: 'https',
+        hostname: '*.wikimedia.org',
+        port: '',
+        pathname: '/**',
       },
     ],
   },
