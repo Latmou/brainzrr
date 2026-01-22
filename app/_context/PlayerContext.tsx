@@ -347,10 +347,45 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  const handleError = useCallback(() => {
+  const handleError = useCallback(async () => {
     setIsLoading(false)
     setIsPlaying(false)
-  }, [])
+
+    const audio = audioRef.current
+    if (audio && currentTrack) {
+      console.error('Playback error details:', audio.error)
+      
+      // NotSupportedError or other source-related errors
+      if (audio.error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        console.warn('Media not supported error detected. Clearing cache and retrying...')
+        
+        try {
+          // 1. Remove from client-side cache if applicable (though audio is usually browser-cached or server-cached)
+          // The issue specifically mentions removing from cache and refetching.
+          
+          // 2. We can try to force a refetch by adding a timestamp to the URL
+          const retryTrack = { ...currentTrack }
+          const timestamp = Date.now()
+          
+          audio.src = `/api/stream?mbid=${retryTrack.mbid}&t=${timestamp}`
+          setIsLoading(true)
+          
+          try {
+            await audio.play()
+            setIsPlaying(true)
+          } catch (e: any) {
+            if (e.name !== 'AbortError') {
+              console.error("Retry playback failed:", e)
+              setIsLoading(false)
+              setIsPlaying(false)
+            }
+          }
+        } catch (e) {
+          console.error('Error during retry attempt:', e)
+        }
+      }
+    }
+  }, [currentTrack])
 
   // Attach event listeners
   useEffect(() => {

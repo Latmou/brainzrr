@@ -16,6 +16,7 @@ export async function GET(
 ) {
   const { searchParams } = new URL(req.url);
   const mbid = searchParams.get('mbid');
+  const force = searchParams.get('t'); // If 't' is present, we might want to skip server cache if it failed
 
   if (!mbid) {
     return NextResponse.json({ error: 'MBID is required' }, { status: 400 });
@@ -25,29 +26,38 @@ export async function GET(
 
   // Check if file is in server cache
   if (fs.existsSync(cachePath)) {
-    const stats = fs.statSync(cachePath);
-    const fileStream = fs.createReadStream(cachePath);
-    
-    // Convert Node.js ReadStream to Web Stream
-    const webStream = new ReadableStream({
-      start(controller) {
-        fileStream.on('data', (chunk) => controller.enqueue(chunk));
-        fileStream.on('end', () => controller.close());
-        fileStream.on('error', (err) => controller.error(err));
-      },
-      cancel() {
-        fileStream.destroy();
+    if (force) {
+      console.log(`[STREAM] ${cachePath} cache found but 'force' is enabled, removing...`);
+      try {
+        fs.unlinkSync(cachePath);
+      } catch (e) {
+        console.warn(`[STREAM] Failed to remove cache file: ${e}`);
       }
-    });
+    } else {
+      const stats = fs.statSync(cachePath);
+      const fileStream = fs.createReadStream(cachePath);
+      
+      // Convert Node.js ReadStream to Web Stream
+      const webStream = new ReadableStream({
+        start(controller) {
+          fileStream.on('data', (chunk) => controller.enqueue(chunk));
+          fileStream.on('end', () => controller.close());
+          fileStream.on('error', (err) => controller.error(err));
+        },
+        cancel() {
+          fileStream.destroy();
+        }
+      });
 
-    return new Response(webStream, {
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': stats.size.toString(),
-        'Accept-Ranges': 'bytes',
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
-    });
+      return new Response(webStream, {
+        headers: {
+          'Content-Type': 'audio/mpeg',
+          'Content-Length': stats.size.toString(),
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
   }
 
   try {
@@ -59,6 +69,8 @@ export async function GET(
 
     const ytdlp = new YtDlp();
     const info = await ytdlp.getInfoAsync(youtubeSearch) as any;
+
+    console.log('[STREAM]', info);
     
     if (!info || !info.entries || info.entries.length === 0) {
       return NextResponse.json({ error: 'No stream found' }, { status: 404 });

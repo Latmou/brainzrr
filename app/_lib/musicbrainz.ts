@@ -34,7 +34,8 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`MusicBrainz API error: ${response.status} ${response.statusText} - ${errorText}`);
+        console.error(`MusicBrainz API error: ${response.status} ${response.statusText} - ${errorText}`);
+        return new Promise(() => {});
       }
 
       return await response.json();
@@ -43,7 +44,7 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
         if (e instanceof Error) {
           console.error(`/ws/2/${endpoint} : Fetch error details: ${e.stack}`);
         }
-        throw e;
+        return new Promise(() => {});
       }
       console.warn(`[MUSICBRAINZ] Fetch attempt ${i + 1} failed. Retrying...`, e);
       await delay(1000);
