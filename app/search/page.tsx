@@ -30,9 +30,9 @@ export default function SearchPage() {
 
   // Load from cache on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedQuery = cacheService.get<string>('search_query')
-      const savedResults = cacheService.get<any>('search_results')
+    const loadCache = async () => {
+      const savedQuery = await cacheService.get<string>('search_query')
+      const savedResults = await cacheService.get<any>('search_results')
 
       if (savedQuery) {
         setQuery(savedQuery)
@@ -43,6 +43,10 @@ export default function SearchPage() {
       }
       // Use a small delay to ensure initial values are set before we allow searches
       setTimeout(() => setIsInitialLoad(false), 100)
+    }
+
+    if (typeof window !== 'undefined') {
+      loadCache()
     }
   }, [])
 

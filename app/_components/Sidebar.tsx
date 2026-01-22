@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Home, Search, Library, PlusCircle } from 'lucide-react'
+import { Home, Search, Library, PlusCircle, Settings } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/app/_lib/utils'
 
@@ -12,6 +12,7 @@ export function Sidebar({ className }: { className?: string }) {
     { icon: Home, label: 'Accueil', href: '/' },
     { icon: Search, label: 'Rechercher', href: '/search' },
     { icon: Library, label: 'Bibliothèque', href: '/library' },
+    { icon: Settings, label: 'Paramètres', href: '/settings' },
   ]
 
   return (

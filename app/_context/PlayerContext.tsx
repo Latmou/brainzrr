@@ -67,46 +67,48 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const audio = new Audio()
     audioRef.current = audio
     
-    // Set initial volume from cache if available
-    const savedVolume = cacheService.get<number>('player_volume')
-    if (typeof savedVolume === 'number' && isFinite(savedVolume)) {
-      const validatedVolume = Math.max(0, Math.min(1, savedVolume))
-      setVolume(validatedVolume)
-      audio.volume = validatedVolume
-    } else {
-      audio.volume = volume
+    const initPlayer = async () => {
+      // Set initial volume from cache if available
+      const savedVolume = await cacheService.get<number>('player_volume')
+      if (typeof savedVolume === 'number' && isFinite(savedVolume)) {
+        const validatedVolume = Math.max(0, Math.min(1, savedVolume))
+        setVolume(validatedVolume)
+        audio.volume = validatedVolume
+      } else {
+        audio.volume = volume
+      }
+
+      // Load state from cache on mount
+      const savedTrackId = await cacheService.get<string>('player_currentTrackId')
+      const savedTime = await cacheService.get<number>('player_currentTime')
+      const savedQueue = await cacheService.get<Track[]>('player_queue')
+      const savedHistory = await cacheService.get<Track[]>('player_history')
+
+      if (savedTrackId) {
+        const track = await cacheService.get<Track>(`player_recording_${savedTrackId}`)
+        if (track) {
+          setCurrentTrack(track)
+          if (track.duration) {
+            setDuration(track.duration)
+          }
+        }
+      }
+      if (savedTime !== null) {
+        setCurrentTime(savedTime)
+      }
+      if (savedQueue) {
+        setQueue(savedQueue)
+      }
+      if (savedHistory) {
+        setHistory(savedHistory)
+      }
     }
+
+    initPlayer()
 
     return () => {
       audio.pause()
       audio.src = ''
-    }
-  }, [])
-
-  // Load state from cache on mount
-  useEffect(() => {
-    const savedTrackId = cacheService.get<string>('player_currentTrackId')
-    const savedTime = cacheService.get<number>('player_currentTime')
-    const savedQueue = cacheService.get<Track[]>('player_queue')
-    const savedHistory = cacheService.get<Track[]>('player_history')
-
-    if (savedTrackId) {
-      const track = cacheService.get<Track>(`player_recording_${savedTrackId}`)
-      if (track) {
-        setCurrentTrack(track)
-        if (track.duration) {
-          setDuration(track.duration)
-        }
-      }
-    }
-    if (savedTime !== null) {
-      setCurrentTime(savedTime)
-    }
-    if (savedQueue) {
-      setQueue(savedQueue)
-    }
-    if (savedHistory) {
-      setHistory(savedHistory)
     }
   }, [])
 

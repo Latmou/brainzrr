@@ -1,6 +1,6 @@
 import {musicBrainzService} from '@/app/_lib/musicbrainz'
 import {User} from 'lucide-react'
-import {ReleaseGroupItem} from '@/app/_components/ReleaseGroupItem'
+import {Discography} from '@/app/_components/Discography'
 import {Pre} from "@/app/_components/Pre";
 
 export default async function ArtistPage({params}: { params: Promise<{ id: string }> }) {
@@ -61,97 +61,7 @@ export default async function ArtistPage({params}: { params: Promise<{ id: strin
         </div>
       </div>
 
-      {categories.albums.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Albums</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.albums.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {categories.ep.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">EPs</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.ep.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {categories.lives.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Lives</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.lives.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {categories.compilations.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Compilations</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.compilations.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {categories.singles.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Singles</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.singles.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {categories.other.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-bold mb-4">Autre</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 gap-4">
-            {categories.other.map((releaseGroup) => (
-              <ReleaseGroupItem
-                key={releaseGroup.id}
-                releaseGroup={releaseGroup}
-                artistName={artist.name}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-
+      <Discography artistName={artist.name} categories={categories} />
 
       <hr className="mt-8 -mb-4 border-white/10"/>
       <Pre data={artist} />

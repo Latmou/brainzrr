@@ -37,7 +37,7 @@ export function RecordingItem({ recording, artistName, artistId, releaseId, inde
   useEffect(() => {
     const checkStream = async () => {
       // Check cache first
-      const cached = cacheService.get<{ found: boolean, ready: boolean }>(`stream_status_${recording.id}`)
+      const cached = await cacheService.get<{ found: boolean, ready: boolean }>(`stream_status_${recording.id}`)
       if (cached) {
         setStreamStatus(cached)
         return
@@ -49,7 +49,7 @@ export function RecordingItem({ recording, artistName, artistId, releaseId, inde
         if (res.ok) {
           const data = await res.json()
           setStreamStatus(data)
-          cacheService.set(`stream_status_${recording.id}`, data)
+          await cacheService.set(`stream_status_${recording.id}`, data)
         } else {
           setStreamStatus({ found: false, ready: false })
         }

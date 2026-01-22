@@ -1,8 +1,8 @@
 'use client'
 
-import { 
-  Play, Pause, SkipForward, SkipBack, Repeat, Shuffle, 
-  ChevronDown, ListMusic, Repeat1, Volume2, Loader2
+import {
+  Play, Pause, SkipForward, SkipBack, Repeat, Shuffle,
+  ChevronDown, ListMusic, Repeat1, Volume2, Loader2, Music
 } from 'lucide-react'
 import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
@@ -84,7 +84,7 @@ export function FullScreenPlayer() {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-zinc-700">
-              <ListMusic size={80} className="text-zinc-500" />
+              <Music size={80} className="text-zinc-500" />
             </div>
           )}
         </div>

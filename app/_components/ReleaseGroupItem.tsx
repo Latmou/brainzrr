@@ -21,15 +21,15 @@ export function ReleaseGroupItem({ releaseGroup, artistName }: ReleaseGroupItemP
 
   useEffect(() => {
     if (!release) {
-      // Check cache first
-      const cached = cacheService.get<Release>(`rg_release_${releaseGroup.id}`)
-      if (cached) {
-        setRelease(cached)
-        setIsLoading(false)
-        return
-      }
-
       const fetchReleases = async () => {
+        // Check cache first
+        const cached = await cacheService.get<Release>(`rg_release_${releaseGroup.id}`)
+        if (cached) {
+          setRelease(cached)
+          setIsLoading(false)
+          return
+        }
+
         setIsLoading(true)
         try {
           const data = await getReleaseGroupReleasesAction(releaseGroup.id)
@@ -42,7 +42,7 @@ export function ReleaseGroupItem({ releaseGroup, artistName }: ReleaseGroupItemP
             })
             const representative = sortedReleases[0]
             setRelease(representative)
-            cacheService.set(`rg_release_${releaseGroup.id}`, representative)
+            await cacheService.set(`rg_release_${releaseGroup.id}`, representative)
           }
         } catch (error) {
           console.error('Failed to fetch release group releases:', error)

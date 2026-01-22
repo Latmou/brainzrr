@@ -18,28 +18,29 @@ export function ReleaseArt({releaseId, title, className, fallbackSize = 48}: Rel
   const [coverUrl, setCoverUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const cachedUrl = cacheService.get<string>(`release_art_${releaseId}`)
-    if (cachedUrl) {
-      setCoverUrl(cachedUrl)
-    } else {
-      getReleaseArtAction(releaseId).then(url => {
+    const loadArt = async () => {
+      const cachedUrl = await cacheService.get<string>(`release_art_${releaseId}`)
+      console.log(cachedUrl)
+      if (cachedUrl) {
+        setCoverUrl(cachedUrl)
+      } else {
+        const url = await getReleaseArtAction(releaseId)
         const valueToCache = url || 'NOT_FOUND'
-        cacheService.set(`release_art_${releaseId}`, valueToCache)
+        await cacheService.set(`release_art_${releaseId}`, valueToCache)
         setCoverUrl(valueToCache)
-      })
+      }
     }
+    loadArt()
   }, [releaseId])
 
-  const actualUrl = coverUrl === 'NOT_FOUND' ? null : coverUrl
-
   return (
-    <div className={cn(`bg-zinc-700 ${!actualUrl ? 'animate-pulse' : ''} flex items-center justify-center relative overflow-hidden`, className)}>
-      {actualUrl && (
-          actualUrl === 'NOT_FOUND' ?
+    <div className={cn(`bg-zinc-700 ${!coverUrl ? 'animate-pulse' : ''} flex items-center justify-center relative overflow-hidden`, className)}>
+      {coverUrl && (
+        coverUrl === 'NOT_FOUND' ?
             <Music size={fallbackSize} className="text-zinc-500"/>
             :
             <Image
-              src={actualUrl}
+              src={coverUrl}
               width={200}
               height={200}
               alt={title}
