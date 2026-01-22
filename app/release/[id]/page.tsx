@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseArt } from '@/app/_components/ReleaseArt'
 import { Pre } from '@/app/_components/Pre'
+import { ReleasePreloader } from '@/app/_components/release/ReleasePreloader'
 
 export default async function ReleasePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,6 +30,7 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="flex flex-col gap-8 p-4 md:p-0">
+      <ReleasePreloader tracks={fullTracklist} />
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
         <ReleaseArt 

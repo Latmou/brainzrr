@@ -69,7 +69,7 @@ export function ReleaseGroupItem({ releaseGroup, artistName }: ReleaseGroupItemP
     return (
       <div className="bg-zinc-800/40 p-4 rounded-lg opacity-50">
         <div className="aspect-square bg-zinc-700 rounded mb-4 flex items-center justify-center">
-          <span className="text-zinc-500 text-xs">No release found</span>
+          <span className="text-zinc-500 text-xs">Pas de release</span>
         </div>
         <div className="font-bold truncate">{releaseGroup.title}</div>
         <div className="text-zinc-500 text-xs">

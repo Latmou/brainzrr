@@ -44,7 +44,7 @@ export const musicBrainzService = {
 
   async getArtist(mbid: string) {
     const artist = (await fetchMB(`artist/${mbid}`))
-    const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits`))['release-groups'] as ReleaseGroup[];
+    const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits&limit=100`))['release-groups'] as ReleaseGroup[];
     return {
       ...artist,
       'release-groups': releaseGroups.sort((rgA, rgB) => new Date(rgB["first-release-date"] ?? 0).getTime() - new Date(rgA["first-release-date"] ?? 0).getTime()),
@@ -56,7 +56,7 @@ export const musicBrainzService = {
   },
 
   async getReleaseGroup(mbid: string, inc: string[] = []) {
-    return fetchMB(`release-group/${mbid}`, inc.length ? { inc: inc.join('+') } : {});
+    return fetchMB(`release-group/${mbid}`, inc.length ? { inc: inc.join('+') } : {}) as Promise<ReleaseGroup>;
   },
 
   async searchRelease(query: string) {
@@ -64,7 +64,7 @@ export const musicBrainzService = {
   },
 
   async getRelease(mbid: string) {
-    const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings', 'labels'].join('+') });
+    const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings', 'labels', 'release-groups'].join('+') });
     release['cover-art-url'] = await musicBrainzService.getReleaseArt(release.id)
     return release as Release;
   },
