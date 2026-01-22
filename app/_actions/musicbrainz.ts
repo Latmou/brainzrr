@@ -31,3 +31,7 @@ export async function getReleaseArtAction(mbid: string) {
 export async function getReleaseGroupReleasesAction(mbid: string) {
   return musicBrainzService.getReleaseGroup(mbid, ['releases'])
 }
+
+export async function getReleaseAction(mbid: string) {
+  return musicBrainzService.getRelease(mbid)
+}

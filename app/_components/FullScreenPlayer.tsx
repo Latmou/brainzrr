@@ -7,6 +7,7 @@ import {
 import { usePlayer } from '@/app/_context/PlayerContext'
 import { cn } from '@/app/_lib/utils'
 import Link from 'next/link'
+import { ReleaseArt } from './ReleaseArt'
 
 export function FullScreenPlayer() {
   const { 
@@ -74,11 +75,12 @@ export function FullScreenPlayer() {
             <div className="w-full h-full flex items-center justify-center bg-zinc-800">
               <Loader2 size={80} className="text-white animate-spin" />
             </div>
-          ) : currentTrack.coverArtUrl ? (
-            <img 
-              src={currentTrack.coverArtUrl}
-              alt={currentTrack.title} 
-              className="w-full h-full object-cover"
+          ) : currentTrack.releaseId ? (
+            <ReleaseArt 
+              releaseId={currentTrack.releaseId} 
+              title={currentTrack.title}
+              className="w-full h-full"
+              fallbackSize={80}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-zinc-700">
