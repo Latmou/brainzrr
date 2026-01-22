@@ -16,6 +16,7 @@ import { PlayerProvider } from "@/app/_context/PlayerContext";
 import { Sidebar } from "@/app/_components/Sidebar";
 import { PlayerBar } from "@/app/_components/PlayerBar";
 import { FullScreenPlayer } from "@/app/_components/FullScreenPlayer";
+import { CacheManager } from "@/app/_components/CacheManager";
 
 export const metadata: Metadata = {
   title: "Brainzrr",
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col`}
       >
+        <CacheManager />
         <PlayerProvider>
           <FullScreenPlayer />
           <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">

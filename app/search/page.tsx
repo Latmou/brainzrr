@@ -6,6 +6,7 @@ import { musicBrainzService } from '@/app/_lib/musicbrainz'
 import Link from 'next/link'
 import { RecordingItem } from '@/app/_components/RecordingItem'
 import { ReleaseItem } from '@/app/_components/ReleaseItem'
+import { cacheService } from '@/app/_lib/cache'
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
@@ -27,33 +28,29 @@ export default function SearchPage() {
     return () => clearTimeout(timer)
   }, [query])
 
-  // Load from localStorage on mount
+  // Load from cache on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedQuery = localStorage.getItem('search_query')
-      const savedResults = localStorage.getItem('search_results')
+      const savedQuery = cacheService.get<string>('search_query')
+      const savedResults = cacheService.get<any>('search_results')
 
       if (savedQuery) {
         setQuery(savedQuery)
         setDebouncedQuery(savedQuery)
       }
       if (savedResults) {
-        try {
-          setResults(JSON.parse(savedResults))
-        } catch (e) {
-          console.error('Failed to parse saved search results', e)
-        }
+        setResults(savedResults)
       }
       // Use a small delay to ensure initial values are set before we allow searches
       setTimeout(() => setIsInitialLoad(false), 100)
     }
   }, [])
 
-  // Save to localStorage when query or results change
+  // Save to cache when query or results change
   useEffect(() => {
     if (!isInitialLoad && typeof window !== 'undefined') {
-      localStorage.setItem('search_query', query)
-      localStorage.setItem('search_results', JSON.stringify(results))
+      cacheService.set('search_query', query)
+      cacheService.set('search_results', results)
     }
   }, [query, results, isInitialLoad])
 
@@ -144,9 +141,7 @@ export default function SearchPage() {
                   <RecordingItem 
                     key={recording.id} 
                     recording={recording} 
-                    showIndex={false} 
-                    artistId={recording['artist-credit']?.[0]?.artist?.id}
-                    releaseId={recording.releases?.[0]?.id}
+                    showIndex={false}
                     coverArtUrl={recording.releases?.[0]?.id ? `https://coverartarchive.org/release/${recording.releases[0].id}/front-250` : undefined}
                   />
                 ))}

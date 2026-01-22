@@ -14,6 +14,8 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
     url.searchParams.set(key, value);
   }
 
+  console.log('[MUSICBRAINZ] ' + url.toString());
+
   try {
     const response = await fetch(url.toString(), {
       headers: {
@@ -45,7 +47,7 @@ export const musicBrainzService = {
     const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits`))['release-groups'] as ReleaseGroup[];
     return {
       ...artist,
-      'release-groups': releaseGroups,
+      'release-groups': releaseGroups.sort((rgA, rgB) => new Date(rgB["first-release-date"] ?? 0).getTime() - new Date(rgA["first-release-date"] ?? 0).getTime()),
     } as ArtistPageObject;
   },
 

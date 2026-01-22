@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ReleaseGroup, Release } from '@/app/_types/MusicBrainz'
 import { ReleaseItem } from './ReleaseItem'
 import { getReleaseGroupReleasesAction } from '@/app/_actions/musicbrainz'
+import { cacheService } from '@/app/_lib/cache'
 
 interface ReleaseGroupItemProps {
   releaseGroup: ReleaseGroup
@@ -20,17 +21,12 @@ export function ReleaseGroupItem({ releaseGroup, artistName }: ReleaseGroupItemP
 
   useEffect(() => {
     if (!release) {
-      // Check localStorage first
-      const cached = localStorage.getItem(`rg_release_${releaseGroup.id}`)
+      // Check cache first
+      const cached = cacheService.get<Release>(`rg_release_${releaseGroup.id}`)
       if (cached) {
-        try {
-          const parsed = JSON.parse(cached)
-          setRelease(parsed)
-          setIsLoading(false)
-          return
-        } catch (e) {
-          console.error('Failed to parse cached release:', e)
-        }
+        setRelease(cached)
+        setIsLoading(false)
+        return
       }
 
       const fetchReleases = async () => {
@@ -46,7 +42,7 @@ export function ReleaseGroupItem({ releaseGroup, artistName }: ReleaseGroupItemP
             })
             const representative = sortedReleases[0]
             setRelease(representative)
-            localStorage.setItem(`rg_release_${releaseGroup.id}`, JSON.stringify(representative))
+            cacheService.set(`rg_release_${releaseGroup.id}`, representative)
           }
         } catch (error) {
           console.error('Failed to fetch release group releases:', error)

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react'
+import { cacheService } from '@/app/_lib/cache'
 
 interface Track {
   id: string
@@ -66,12 +67,12 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     const audio = new Audio()
     audioRef.current = audio
     
-    // Set initial volume from localStorage if available
-    const savedVolume = localStorage.getItem('player_volume')
-    if (savedVolume) {
-      const vol = parseFloat(savedVolume)
-      setVolume(vol)
-      audio.volume = vol
+    // Set initial volume from cache if available
+    const savedVolume = cacheService.get<number>('player_volume')
+    if (typeof savedVolume === 'number' && isFinite(savedVolume)) {
+      const validatedVolume = Math.max(0, Math.min(1, savedVolume))
+      setVolume(validatedVolume)
+      audio.volume = validatedVolume
     } else {
       audio.volume = volume
     }
@@ -82,55 +83,54 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Load state from localStorage on mount
+  // Load state from cache on mount
   useEffect(() => {
-    const savedTrackId = localStorage.getItem('player_currentTrackId')
-    const savedTime = localStorage.getItem('player_currentTime')
-    const savedQueue = localStorage.getItem('player_queue')
-    const savedHistory = localStorage.getItem('player_history')
+    const savedTrackId = cacheService.get<string>('player_currentTrackId')
+    const savedTime = cacheService.get<number>('player_currentTime')
+    const savedQueue = cacheService.get<Track[]>('player_queue')
+    const savedHistory = cacheService.get<Track[]>('player_history')
 
     if (savedTrackId) {
-      const savedTrack = localStorage.getItem(`player_recording_${savedTrackId}`)
-      if (savedTrack) {
-        const track = JSON.parse(savedTrack)
+      const track = cacheService.get<Track>(`player_recording_${savedTrackId}`)
+      if (track) {
         setCurrentTrack(track)
         if (track.duration) {
           setDuration(track.duration)
         }
       }
     }
-    if (savedTime) {
-      const time = parseFloat(savedTime)
-      setCurrentTime(time)
+    if (savedTime !== null) {
+      setCurrentTime(savedTime)
     }
     if (savedQueue) {
-      setQueue(JSON.parse(savedQueue))
+      setQueue(savedQueue)
     }
     if (savedHistory) {
-      setHistory(JSON.parse(savedHistory))
+      setHistory(savedHistory)
     }
   }, [])
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-      localStorage.setItem('player_volume', volume.toString())
+    if (audioRef.current && typeof volume === 'number' && isFinite(volume)) {
+      const validatedVolume = Math.max(0, Math.min(1, volume))
+      audioRef.current.volume = validatedVolume
+      cacheService.set('player_volume', validatedVolume)
     }
   }, [volume])
 
   useEffect(() => {
     if (currentTrack) {
-      localStorage.setItem('player_currentTrackId', currentTrack.id)
-      localStorage.setItem(`player_recording_${currentTrack.id}`, JSON.stringify(currentTrack))
+      cacheService.set('player_currentTrackId', currentTrack.id)
+      cacheService.set(`player_recording_${currentTrack.id}`, currentTrack)
     }
   }, [currentTrack])
 
   useEffect(() => {
-    localStorage.setItem('player_queue', JSON.stringify(queue))
+    cacheService.set('player_queue', queue)
   }, [queue])
 
   useEffect(() => {
-    localStorage.setItem('player_history', JSON.stringify(history))
+    cacheService.set('player_history', history)
   }, [history])
 
   const seek = useCallback((time: number) => {
@@ -138,7 +138,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       isSeeking.current = true
       audioRef.current.currentTime = time
       setCurrentTime(time)
-      localStorage.setItem('player_currentTime', time.toString())
+      cacheService.set('player_currentTime', time)
       setTimeout(() => {
         isSeeking.current = false
       }, 50)
@@ -316,7 +316,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       const time = audioRef.current.currentTime
       setCurrentTime(time)
       if (time > 0) {
-        localStorage.setItem('player_currentTime', time.toString())
+        cacheService.set('player_currentTime', time)
       }
     }
   }, [])
@@ -328,7 +328,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (currentTrack && (!currentTrack.duration || Math.abs(currentTrack.duration - audioDuration) > 1)) {
         const updatedTrack = { ...currentTrack, duration: audioDuration }
         setCurrentTrack(updatedTrack)
-        localStorage.setItem(`player_recording_${currentTrack.id}`, JSON.stringify(updatedTrack))
+        cacheService.set(`player_recording_${currentTrack.id}`, updatedTrack)
       }
     }
   }, [currentTrack])

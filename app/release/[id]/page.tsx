@@ -91,8 +91,6 @@ export default async function ReleasePage({ params }: { params: Promise<{ id: st
               }}
               index={index}
               artistName={artistName}
-              artistId={release['artist-credit']?.[0]?.artist?.id}
-              releaseId={id}
               coverArtUrl={coverArtUrl}
               fullTracklist={fullTracklist}
             />
