@@ -349,6 +349,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const handleError = useCallback(() => {
     setIsLoading(false)
+    setIsPlaying(false)
   }, [])
 
   // Attach event listeners

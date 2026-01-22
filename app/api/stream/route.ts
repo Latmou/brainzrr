@@ -59,6 +59,11 @@ export async function GET(
 
     const ytdlp = new YtDlp();
     const info = await ytdlp.getInfoAsync(youtubeSearch) as any;
+    
+    if (!info || !info.entries || info.entries.length === 0) {
+      return NextResponse.json({ error: 'No stream found' }, { status: 404 });
+    }
+
     const entry = info.entries[0];
     const {url} = entry
 
