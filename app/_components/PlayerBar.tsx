@@ -15,7 +15,8 @@ export function PlayerBar({ className }: { className?: string }) {
   const { 
     currentTrack, isPlaying, togglePlay, next, previous, 
     volume, setVolume, loopMode, setLoopMode, isRandom, toggleRandom,
-    currentTime, duration, seek, setIsFullScreen, isLoading
+    currentTime, duration, seek, setIsFullScreen, isLoading,
+    showQueue, toggleQueue
   } = usePlayer()
 
   const formatTime = (time: number) => {
@@ -179,7 +180,16 @@ export function PlayerBar({ className }: { className?: string }) {
         className="hidden lg:flex w-1/3 items-center justify-end gap-3 text-zinc-400"
         onClick={(e) => e.stopPropagation()}
       >
-        <ListMusic size={20} className="hover:text-white cursor-pointer transition-colors" />
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setIsFullScreen(true)
+            if (!showQueue) toggleQueue()
+          }}
+          className={cn("hover:text-white transition-colors", showQueue && "text-green-500")}
+        >
+          <ListMusic size={20} className="cursor-pointer" />
+        </button>
         <div 
           className="flex items-center gap-2 w-32 group"
           onWheel={(e) => {

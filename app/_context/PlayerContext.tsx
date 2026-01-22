@@ -38,11 +38,14 @@ interface PlayerContextType {
   removeFromQueue: (trackId: string) => void
   changeQueueOrder: (oldIndex: number, newIndex: number) => void
   goTo: (index: number) => void
+  clearQueue: () => void
   setVolume: (volume: number) => void
   setLoopMode: (mode: 'none' | 'all' | 'one') => void
   toggleRandom: () => void
   setIsFullScreen: (isFullScreen: boolean) => void
   preloadQueue: (tracks: Track[]) => void
+  showQueue: boolean
+  toggleQueue: () => void
 }
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined)
@@ -56,6 +59,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [loopMode, setLoopMode] = useState<'none' | 'all' | 'one'>('none')
   const [isRandom, setIsRandom] = useState(false)
   const [isFullScreen, setIsFullScreen] = useState(false)
+  const [showQueue, setShowQueue] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -289,6 +293,10 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     play(track)
   }, [currentTrack, play, queue])
 
+  const clearQueue = useCallback(() => {
+    setQueue([])
+  }, [])
+
   const toggleRandom = useCallback(() => {
     const nextRandom = !isRandom
     setIsRandom(nextRandom)
@@ -422,12 +430,16 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [queue])
 
+  const toggleQueue = useCallback(() => {
+    setShowQueue(prev => !prev)
+  }, [])
+
   return (
     <PlayerContext.Provider value={{
       currentTrack, isPlaying, queue, history, volume, loopMode, isRandom, isFullScreen,
-      currentTime, duration, isLoading,
+      currentTime, duration, isLoading, showQueue,
       play, pause, togglePlay, next, previous, seek, setQueue, addToQueue, removeFromQueue,
-      changeQueueOrder, goTo, setVolume, setLoopMode, toggleRandom, setIsFullScreen, preloadQueue
+      changeQueueOrder, goTo, clearQueue, setVolume, setLoopMode, toggleRandom, setIsFullScreen, preloadQueue, toggleQueue
     }}>
       {children}
     </PlayerContext.Provider>
