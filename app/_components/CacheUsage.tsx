@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { cacheService } from '@/app/_lib/cache'
-import { Trash2, RefreshCw, HardDrive } from 'lucide-react'
+import {Trash2, RefreshCw, HardDrive, Loader2} from 'lucide-react'
+import {cleanServerCache} from "@/app/_actions/settings";
 
 export function CacheUsage() {
+  const [serverCacheLoading, setServerCacheLoading] = useState<boolean>(false)
   const [stats, setStats] = useState({
     count: 0,
     size: 0,
@@ -32,6 +34,15 @@ export function CacheUsage() {
     if (confirm('Voulez-vous vraiment vider tout le cache ?')) {
       await cacheService.clear()
       updateStats()
+      window.location.reload()
+    }
+  }
+
+  const handleClearCacheServer = async () => {
+    if (confirm('Voulez-vous vraiment vider tout le cache ?')) {
+      setServerCacheLoading(true)
+      await cleanServerCache()
+      setServerCacheLoading(false)
     }
   }
 
@@ -58,11 +69,11 @@ export function CacheUsage() {
       </div>
 
       <div className="flex flex-wrap gap-6 mb-8">
-        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-[200px]">
+        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-50">
           <div className="text-zinc-400 text-sm mb-1">Éléments mis en cache</div>
           <div className="text-3xl font-bold">{stats.count}</div>
         </div>
-        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-[200px]">
+        <div className="bg-zinc-900/50 p-4 rounded-lg flex-1 min-w-50">
           <div className="text-zinc-400 text-sm mb-1">Taille estimée</div>
           <div className="text-3xl font-bold">{formatSize(stats.size)}</div>
         </div>
@@ -85,6 +96,14 @@ export function CacheUsage() {
       </div>
 
       <div className="flex flex-wrap gap-4">
+        <button
+          onClick={handleClearCacheServer}
+          className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-full transition-colors font-medium text-sm"
+        >
+          {serverCacheLoading ? <Loader2 size={16} className="text-white animate-spin" /> : <Trash2 size={16} />}
+
+          Vider le cache serveur
+        </button>
         <button
           onClick={handleClearCache}
           className="flex items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 px-4 py-2 rounded-full transition-colors font-medium text-sm"

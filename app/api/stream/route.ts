@@ -1,26 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { YtDlp } from 'ytdlp-nodejs';
-import { musicBrainzService } from '@/app/_lib/musicbrainz';
-import { prisma } from '@/app/_lib/prisma';
+import {NextRequest, NextResponse} from 'next/server';
+import {musicBrainzService} from '@/app/_lib/musicbrainz';
+import {prisma} from '@/app/_lib/prisma';
 import fs from 'fs';
 import path from 'path';
+import {youtubeService} from "@/app/_lib/youtube";
 
 const CACHE_DIR = path.join(process.cwd(), '.next', 'cache', 'audio');
 
 // Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
-  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.mkdirSync(CACHE_DIR, {recursive: true});
 }
 
 export async function GET(
   req: NextRequest
 ) {
-  const { searchParams } = new URL(req.url);
+  const {searchParams} = new URL(req.url);
   const mbid = searchParams.get('mbid');
   const force = searchParams.get('t'); // If 't' is present, we might want to skip server cache if it failed
 
   if (!mbid) {
-    return NextResponse.json({ error: 'MBID is required' }, { status: 400 });
+    return NextResponse.json({error: 'MBID is required'}, {status: 400});
   }
 
   const cachePath = path.join(CACHE_DIR, `${mbid}.mp3`);
@@ -37,7 +37,7 @@ export async function GET(
     } else {
       const stats = fs.statSync(cachePath);
       const fileStream = fs.createReadStream(cachePath);
-      
+
       // Convert Node.js ReadStream to Web Stream
       const webStream = new ReadableStream({
         start(controller) {
@@ -66,22 +66,12 @@ export async function GET(
 
     const artistName = recording['artist-credit']?.[0]?.name || '';
     const query = `${recording.title} ${artistName}`;
-    const youtubeSearch = `ytsearch1:${query}`;
-
-    const ytdlp = new YtDlp();
-    const info = await ytdlp.getInfoAsync(youtubeSearch) as any;
-    
-    if (!info || !info.entries || info.entries.length === 0) {
-      return NextResponse.json({ error: 'No stream found' }, { status: 404 });
-    }
-
-    const entry = info.entries[0];
-    const {url, title, webpage_url} = entry
+    const {title, url} = await youtubeService.search(query);
 
     // Save YouTube info to DB for this recording
     try {
       await prisma.recording.update({
-        where: { mbid },
+        where: {mbid},
         data: {
           youtubeTitle: title,
           youtubeUrl: url
@@ -93,18 +83,13 @@ export async function GET(
     }
 
     // Set up a ReadableStream to proxy the audio data
-    const streamResult = ytdlp.stream(url, {
-      format: {
-        filter: 'audioonly',
-        quality: 0 // highest quality
-      }
-    });
+    const streamResult = youtubeService.stream(url)
 
     // Use a PassThrough stream to capture the pipe and write to file
-    const { PassThrough } = await import('stream');
+    const {PassThrough} = await import('stream');
     const passThrough = new PassThrough();
     const fileWriteStream = fs.createWriteStream(cachePath);
-    
+
     streamResult.pipe(passThrough);
     passThrough.pipe(fileWriteStream);
 
@@ -137,6 +122,6 @@ export async function GET(
   } catch (error: any) {
     console.error('Streaming error:', error);
     if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-    return NextResponse.json({ error: 'Failed to stream audio' }, { status: 500 });
+    return NextResponse.json({error: 'Failed to stream audio'}, {status: 500});
   }
 }

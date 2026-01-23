@@ -1,10 +1,9 @@
 'use server'
 
-import { prisma } from '@/app/_lib/prisma';
+import {prisma} from '@/app/_lib/prisma';
 
-import { musicBrainzService } from '@/app/_lib/musicbrainz';
-import {YtDlp} from "ytdlp-nodejs";
-import {NextResponse} from "next/server";
+import {musicBrainzService} from '@/app/_lib/musicbrainz';
+import {youtubeService} from "@/app/_lib/youtube";
 
 export async function getRecordingAction(mbid: string) {
   return musicBrainzService.getRecording(mbid);
@@ -19,17 +18,7 @@ export async function getRecordingYoutubeInfo(mbid: string) {
 
   const artistName = recording['artist-credit']?.[0]?.name || '';
   const query = `${recording.title} ${artistName}`;
-  const youtubeSearch = `ytsearch1:${query}`;
-
-  const ytdlp = new YtDlp();
-  const info = await ytdlp.getInfoAsync(youtubeSearch) as any;
-
-  if (!info || !info.entries || info.entries.length === 0) {
-    throw new Error('No stream found');
-  }
-
-  const entry = info.entries[0];
-  const {url, title, webpage_url} = entry
+  const {url, title} = await youtubeService.search(query)
 
   // Save YouTube info to DB for this recording
   try {
