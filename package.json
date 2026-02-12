@@ -3,9 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "install-ytdlp": "node node_modules/ytdlp-nodejs/dist/downloadYtdlp.js",
-    "predev": "bun run install-ytdlp && bunx prisma generate",
-    "prebuild": "bun run install-ytdlp && bunx prisma migrate deploy && bunx prisma generate",
+    "predev": "bunx prisma generate",
+    "prebuild": "bunx prisma migrate deploy && bunx prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start"
@@ -25,8 +24,7 @@
     "prisma": "^7.3.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.4.0",
-    "ytdlp-nodejs": "^2.3.5"
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

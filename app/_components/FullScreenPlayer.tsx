@@ -196,19 +196,19 @@ export function FullScreenPlayer() {
 
                   {showSource && (
                     <div className="bg-white/5 p-3 rounded-lg border border-white/10 animate-in fade-in slide-in-from-top-1">
-                      <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Source YouTube</div>
+                      <div className="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Source Invidious</div>
                       {currentTrack.youtubeTitle ? (
                         <>
                           <div className="text-sm text-zinc-300 font-medium mb-1 line-clamp-1">
                             {currentTrack.youtubeTitle}
                           </div>
                           <a
-                            href={currentTrack.youtubeUrl || '#'}
+                            href={currentTrack.youtubeUrl?.replace('www.youtube.com', '127.0.0.1:3010').replace('https://youtube.com', 'http://127.0.0.1:3010').replace('http://youtube.com', 'http://127.0.0.1:3010') || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-green-500 hover:underline flex items-center gap-1"
                           >
-                            Ouvrir sur YouTube <ExternalLink size={10} />
+                            Ouvrir sur Invidious <ExternalLink size={10} />
                           </a>
                         </>
                       ) : (

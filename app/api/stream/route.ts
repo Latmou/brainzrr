@@ -3,7 +3,7 @@ import {musicBrainzService} from '@/app/_lib/musicbrainz';
 import {prisma} from '@/app/_lib/prisma';
 import fs from 'fs';
 import path from 'path';
-import {youtubeService} from "@/app/_lib/youtube";
+import {invidiousService} from "@/app/_lib/invidious";
 
 const CACHE_DIR = path.join(process.cwd(), '.next', 'cache', 'audio');
 
@@ -66,7 +66,7 @@ export async function GET(
 
     const artistName = recording['artist-credit']?.[0]?.name || '';
     const query = `${recording.title} ${artistName}`;
-    const {title, url} = await youtubeService.search(query);
+    const {title, url} = await invidiousService.search(query);
 
     // Save YouTube info to DB for this recording
     try {
@@ -83,36 +83,36 @@ export async function GET(
     }
 
     // Set up a ReadableStream to proxy the audio data
-    const streamResult = youtubeService.stream(url)
+    const webStream = await invidiousService.stream(url)
 
-    // Use a PassThrough stream to capture the pipe and write to file
-    const {PassThrough} = await import('stream');
-    const passThrough = new PassThrough();
-    const fileWriteStream = fs.createWriteStream(cachePath);
+    if (!webStream) {
+      throw new Error('Failed to get web stream from Invidious');
+    }
 
-    streamResult.pipe(passThrough);
-    passThrough.pipe(fileWriteStream);
+    // Use a TransformStream or similar to capture data for caching if needed
+    // But since we want to pipe to a file (Node.js) and return a Response (Web Stream),
+    // we can use the webStream directly for the response and also pipe it to a file.
+    
+    const [responseStream, cacheStream] = webStream.tee();
 
-    // Conversion of Node.js stream to Web Stream for Next.js response
-    const webStream = new ReadableStream({
-      async start(controller) {
-        passThrough.on('data', (chunk) => controller.enqueue(chunk));
-        passThrough.on('end', () => controller.close());
-        passThrough.on('error', (err) => {
-          // Cleanup incomplete file on error
-          if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
-          controller.error(err);
-        });
-      },
-      cancel() {
-        passThrough.destroy();
+    // Handle caching in background
+    (async () => {
+      try {
+        const fileWriteStream = fs.createWriteStream(cachePath);
+        const reader = cacheStream.getReader();
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          fileWriteStream.write(value);
+        }
         fileWriteStream.end();
-        // If canceled before finished, we might want to delete the partial file
-        // but it's tricky. For now just leave it or handle it.
+      } catch (e) {
+        console.error(`[STREAM] Failed to cache stream for ${mbid}:`, e);
+        if (fs.existsSync(cachePath)) fs.unlinkSync(cachePath);
       }
-    });
+    })();
 
-    return new Response(webStream, {
+    return new Response(responseStream, {
       headers: {
         'Content-Type': 'audio/mpeg',
         'Transfer-Encoding': 'chunked',

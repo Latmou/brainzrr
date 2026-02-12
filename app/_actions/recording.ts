@@ -3,7 +3,7 @@
 import {prisma} from '@/app/_lib/prisma';
 
 import {musicBrainzService} from '@/app/_lib/musicbrainz';
-import {youtubeService} from "@/app/_lib/youtube";
+import {invidiousService} from "@/app/_lib/invidious";
 
 export async function getRecordingAction(mbid: string) {
   return musicBrainzService.getRecording(mbid);
@@ -18,7 +18,7 @@ export async function getRecordingYoutubeInfo(mbid: string) {
 
   const artistName = recording['artist-credit']?.[0]?.name || '';
   const query = `${recording.title} ${artistName}`;
-  const {url, title} = await youtubeService.search(query)
+  const {url, title} = await invidiousService.search(query)
 
   // Save YouTube info to DB for this recording
   try {
