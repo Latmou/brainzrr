@@ -57,8 +57,6 @@ services:
     restart: unless-stopped
     volumes:
       - postgresdata:/var/lib/postgresql/data
-      - ./config/sql:/config/sql
-      - ./docker/init-invidious-db.sh:/docker-entrypoint-initdb.d/init-invidious-db.sh
     environment:
       POSTGRES_DB: invidious
       POSTGRES_USER: kemal
@@ -84,7 +82,8 @@ services:
   # --- MusicBrainz Stack ---
   # Based on official metabrainz/musicbrainz-docker mirror configuration
   musicbrainz:
-    image: metabrainz/musicbrainz-docker-musicbrainz:v-2026-02-12.0-build1
+    build:
+      context: ./docker/musicbrainz
     restart: unless-stopped
     depends_on:
       musicbrainz-db:
@@ -113,7 +112,6 @@ services:
     volumes:
       - musicbrainz_config:/config
       - musicbrainz_dbdump:/media/dbdump
-      - ./init-musicbrainz.sh:/usr/local/bin/init-musicbrainz.sh:ro
     command: /usr/local/bin/init-musicbrainz.sh
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:5000/ || [ -f /config/importing.lock ] || exit 1"]
@@ -151,7 +149,8 @@ services:
           - redis
 
   musicbrainz-indexer:
-    image: metabrainz/sir:py3-git2consul
+    build:
+      context: ./docker/musicbrainz-indexer
     restart: unless-stopped
     depends_on:
       musicbrainz-db:
@@ -162,8 +161,6 @@ services:
         condition: service_started
     environment:
       - SIR_CONFIG=/code/config.ini
-    volumes:
-      - ./sir_config.ini:/code/config.ini:ro
     command: >
       sh -c "
         python3 -m sir amqp_setup &&
