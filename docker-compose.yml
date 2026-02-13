@@ -4,14 +4,13 @@
 # If you want to use Invidious in production, see the docker-compose.yml file provided
 # in the installation documentation: https://docs.invidious.io/installation/
 
-version: "3"
 services:
 
   invidious:
     image: quay.io/invidious/invidious:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3010:3000"
+      - "${INVIDIOUS_PORT:-3010}:3000"
     depends_on:
       invidious-db:
         condition: service_healthy
@@ -27,13 +26,13 @@ services:
           host: invidious-db
           port: 5432
         check_tables: true
-        # external_port:
-        # domain:
-        # https_only: false
+        external_port: ${INVIDIOUS_EXTERNAL_PORT:-}
+        domain: ${INVIDIOUS_DOMAIN:-localhost}
+        https_only: ${INVIDIOUS_HTTPS_ONLY:-false}
         # statistics_enabled: false
         hmac_key: "DVEkjUG7yIi+67B6kpcM55CpORU1+lrDy7C50tW7YMM="
         invidious_companion:
-          - private_url: "http://companion:8282/companion"
+          - private_url: "http://invidious-companion:8282/companion"
         invidious_companion_key: "RFfNIQYW4sS68Q95"
     healthcheck:
       test: wget -nv --tries=1 --spider http://127.0.0.1:3000/api/v1/stats || exit 1
@@ -41,7 +40,7 @@ services:
       timeout: 5s
       retries: 2
 
-  companion:
+  invidious-companion:
     image: quay.io/invidious/invidious-companion:latest
     restart: unless-stopped
     environment:
@@ -49,7 +48,7 @@ services:
     volumes:
       - companioncache:/var/tmp/youtubei.js:rw
     healthcheck:
-      test: wget -nv --tries=1 --spider http://127.0.0.1:8282/companion/health || exit 1
+      test: ["CMD-SHELL", "echo > /dev/tcp/127.0.0.1/8282 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 2
@@ -68,6 +67,162 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
 
+  brainzrr-db:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: verysecurepassword
+      POSTGRES_DB: brainzrr
+    volumes:
+      - brainzrr_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d brainzrr"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # --- MusicBrainz Stack ---
+  # Based on official metabrainz/musicbrainz-docker mirror configuration
+  musicbrainz:
+    image: metabrainz/musicbrainz-docker-musicbrainz:v-2026-02-12.0-build1
+    restart: unless-stopped
+    depends_on:
+      musicbrainz-db:
+        condition: service_healthy
+      musicbrainz-redis:
+        condition: service_started
+    ports:
+      - "${MUSICBRAINZ_PORT:-5000}:5000"
+    environment:
+      - MUSICBRAINZ_WEB_SERVER_HOST=musicbrainz
+      - MUSICBRAINZ_WEB_SERVER_PORT=5000
+      - MUSICBRAINZ_DB_HOST=db
+      - MUSICBRAINZ_DB_PORT=5432
+      - MUSICBRAINZ_POSTGRES_USER=musicbrainz
+      - MUSICBRAINZ_POSTGRES_PASSWORD=musicbrainz
+      - MUSICBRAINZ_POSTGRES_DB=musicbrainz_db
+      - MUSICBRAINZ_POSTGRES_SERVER=db
+      - MUSICBRAINZ_POSTGRES_READONLY_SERVER=db
+      - MUSICBRAINZ_REDIS_HOST=redis
+      - MUSICBRAINZ_BASE_URI=http://localhost:${MUSICBRAINZ_PORT:-5000}
+      - MUSICBRAINZ_REPLICATION_ACCESS_TOKEN=${MUSICBRAINZ_REPLICATION_ACCESS_TOKEN:-}
+      # Replication type 2 = Mirror
+      - MUSICBRAINZ_REPLICATION_TYPE=2
+    networks:
+      default:
+        aliases:
+          - musicbrainz
+    volumes:
+      - musicbrainz_config:/config
+      - musicbrainz_dbdump:/media/dbdump
+      - ./init-musicbrainz.sh:/usr/local/bin/init-musicbrainz.sh:ro
+    command: /usr/local/bin/init-musicbrainz.sh
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || [ -f /config/importing.lock ] || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 60
+    stop_signal: SIGKILL
+
+  musicbrainz-db:
+    image: metabrainz/musicbrainz-docker-db:16-build0
+    restart: unless-stopped
+    command: postgres -c "shared_buffers=256MB"
+    networks:
+      default:
+        aliases:
+          - db
+    volumes:
+      - musicbrainz_db_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=musicbrainz
+      - POSTGRES_PASSWORD=musicbrainz
+      - POSTGRES_DB=musicbrainz_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musicbrainz -d musicbrainz_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  musicbrainz-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - redis
+
+  musicbrainz-indexer:
+    image: metabrainz/sir:py3-git2consul
+    restart: unless-stopped
+    depends_on:
+      musicbrainz-db:
+        condition: service_healthy
+      musicbrainz-mq:
+        condition: service_started
+      musicbrainz-search:
+        condition: service_started
+    environment:
+      - SIR_DB_HOST=db
+      - SIR_MQ_HOST=mq
+      - SIR_SEARCH_SERVER=search:8983/solr
+    volumes:
+      - musicbrainz_indexer_data:/var/lib/sir
+
+  musicbrainz-search:
+    image: metabrainz/mb-solr:4.1.0
+    restart: unless-stopped
+    expose:
+      - "8983"
+    networks:
+      default:
+        aliases:
+          - search
+    volumes:
+      - musicbrainz_solr_data:/var/solr
+
+  musicbrainz-mq:
+    image: rabbitmq:3-management-alpine
+    restart: unless-stopped
+    networks:
+      default:
+        aliases:
+          - mq
+
+  # --- Application Stack ---
+  brainzrr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://root:verysecurepassword@brainzrr-db:5432/brainzrr}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - MUSICBRAINZ_BASE_URL=${MUSICBRAINZ_BASE_URL:-http://musicbrainz:5000}
+    command: >
+      bash -c "
+      if [ \"$NODE_ENV\" = \"production\" ]; then
+        bun run build && bun run start
+      else
+        bunx prisma db push && bun run dev
+      fi
+      "
+    depends_on:
+      - invidious
+      - musicbrainz
+      - brainzrr-db
+
 volumes:
   postgresdata:
   companioncache:
+  musicbrainz_config:
+  musicbrainz_db_data:
+  musicbrainz_indexer_data:
+  musicbrainz_solr_data:
+  musicbrainz_dbdump:
+  brainzrr_db_data:

@@ -1,12 +1,8 @@
 import {ArtistDetails, ArtistPageObject, RecordingDetail, Release, ReleaseGroup} from "@/app/_types/MusicBrainz";
 import { prisma } from "@/app/_lib/prisma";
 
-const BASE_URL = 'https://musicbrainz.org';
+const BASE_URL = process.env.MUSICBRAINZ_BASE_URL || 'https://musicbrainz.org';
 const USER_AGENT = 'brainzrr/0.1.0 ( https://github.com/your-username/brainzrr )';
-
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function fetchMB(endpoint: string, params: Record<string, string> = {}, retries = 3) {
   const url = new URL(`${BASE_URL}/ws/2/${endpoint}`);
@@ -16,40 +12,20 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
   }
 
   console.log('[MUSICBRAINZ] ' + url.toString());
+  const response = await fetch(url.toString(), {
+    headers: {
+      'User-Agent': USER_AGENT,
+      'Accept': 'application/json',
+    },
+  });
 
-  for (let i = 0; i < retries; i++) {
-    try {
-      const response = await fetch(url.toString(), {
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (response.status === 503 && i < retries - 1) {
-        console.warn(`[MUSICBRAINZ] 503 Service Unavailable. Retrying in 3s... (Attempt ${i + 1}/${retries})`);
-        await delay(3000);
-        continue;
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`MusicBrainz API error: ${response.status} ${response.statusText} - ${errorText}`);
-        return new Promise(() => {});
-      }
-
-      return await response.json();
-    } catch (e) {
-      if (i === retries - 1) {
-        if (e instanceof Error) {
-          console.error(`/ws/2/${endpoint} : Fetch error details: ${e.stack}`);
-        }
-        return new Promise(() => {});
-      }
-      console.warn(`[MUSICBRAINZ] Fetch attempt ${i + 1} failed. Retrying...`, e);
-      await delay(1000);
-    }
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`MusicBrainz API error: ${response.status} ${response.statusText} - ${errorText}`);
+    return new Promise(() => {});
   }
+
+  return await response.json();
 }
 
 export const musicBrainzService = {
