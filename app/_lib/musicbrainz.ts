@@ -1,7 +1,14 @@
-import {ArtistPageObject, RecordingDetail, Release, ReleaseGroup} from "@/app/_types/MusicBrainz";
-import {prisma} from "@/app/_lib/prisma";
+import {
+  ArtistPageObject,
+  ArtistSearchResponse,
+  RecordingDetail,
+  RecordingSearchResponse,
+  Release,
+  ReleaseGroup,
+  ReleaseSearchResponse
+} from "@/app/_types/MusicBrainz";
 
-const BASE_URL = process.env.MUSICBRAINZ_BASE_URL || 'https://musicbrainz.org';
+const BASE_URL = process.env.MUSICBRAINZ_BASE_URL || 'http://localhost:5000';
 const USER_AGENT = 'brainzrr/0.1.0 ( https://github.com/your-username/brainzrr )';
 
 async function fetchMB(endpoint: string, params: Record<string, string> = {}, retries = 3) {
@@ -22,7 +29,8 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`MusicBrainz API error: ${response.status} ${response.statusText} - ${errorText}`);
-    return new Promise(() => {});
+    return new Promise(() => {
+    });
   }
 
   return await response.json();
@@ -30,11 +38,11 @@ async function fetchMB(endpoint: string, params: Record<string, string> = {}, re
 
 export const musicBrainzService = {
   async searchArtist(query: string) {
-    return fetchMB('artist', { query });
+    return fetchMB('artist', {query}) as Promise<ArtistSearchResponse>;
   },
 
   async getArtist(mbid: string) {
-    const artist = (await fetchMB(`artist/${mbid}`, { inc: ['url-rels', 'artist-rels', 'label-rels', 'tags', 'genres'].join('+') }))
+    const artist = (await fetchMB(`artist/${mbid}`, {inc: ['url-rels', 'artist-rels', 'label-rels', 'tags', 'genres'].join('+')}))
     const releaseGroups = (await fetchMB(`release-group?artist=${artist.id}&inc=artist-credits&limit=100`))['release-groups'] as ReleaseGroup[];
     const result = {
       ...artist,
@@ -45,19 +53,19 @@ export const musicBrainzService = {
   },
 
   async searchReleaseGroup(query: string) {
-    return fetchMB('release-group', { query });
+    return fetchMB('release-group', {query});
   },
 
   async getReleaseGroup(mbid: string, inc: string[] = []) {
-    return fetchMB(`release-group/${mbid}`, inc.length ? { inc: inc.join('+') } : {}) as Promise<ReleaseGroup>;
+    return fetchMB(`release-group/${mbid}`, inc.length ? {inc: inc.join('+')} : {}) as Promise<ReleaseGroup>;
   },
 
   async searchRelease(query: string) {
-    return fetchMB('release', { query });
+    return fetchMB('release', {query}) as Promise<ReleaseSearchResponse>;
   },
 
   async getRelease(mbid: string) {
-    const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings', 'labels', 'release-groups'].join('+') });
+    const release = await fetchMB(`release/${mbid}`, {inc: ['artist-credits', 'recordings', 'labels', 'release-groups'].join('+')});
     release['cover-art-url'] = await musicBrainzService.getReleaseArt(release.id)
     return release as Release;
   },
@@ -79,7 +87,7 @@ export const musicBrainzService = {
   },
 
   async searchRecording(query: string) {
-    return fetchMB('recording', { query });
+    return fetchMB('recording', {query}) as Promise<RecordingSearchResponse>;
   },
 
   async getRecording(mbid: string) {
@@ -87,7 +95,7 @@ export const musicBrainzService = {
   },
 
   async searchArea(query: string) {
-    return fetchMB('area', { query });
+    return fetchMB('area', {query});
   },
 
   async getArea(mbid: string) {
@@ -95,7 +103,7 @@ export const musicBrainzService = {
   },
 
   async searchPlace(query: string) {
-    return fetchMB('place', { query });
+    return fetchMB('place', {query});
   },
 
   async getPlace(mbid: string) {
@@ -103,13 +111,17 @@ export const musicBrainzService = {
   },
 
   async searchLabel(query: string) {
-    return fetchMB('label', { query });
+    return fetchMB('label', {query});
   },
 
   async getLabel(mbid: string) {
-    const label = await fetchMB(`label/${mbid}`, { inc: ['url-rels', 'tags', 'genres'].join('+') });
-    const releases = await fetchMB('release', { label: mbid, limit: '100', inc: ['artist-credits', 'release-groups'].join('+') });
-    
+    const label = await fetchMB(`label/${mbid}`, {inc: ['url-rels', 'tags', 'genres'].join('+')});
+    const releases = await fetchMB('release', {
+      label: mbid,
+      limit: '100',
+      inc: ['artist-credits', 'release-groups'].join('+')
+    });
+
     return {
       ...label,
       releases: releases?.releases || []
@@ -117,10 +129,10 @@ export const musicBrainzService = {
   },
 
   async getArtistsByTag(tag: string) {
-    return fetchMB('artist', { query: `tag:${tag}`, limit: '100' });
+    return fetchMB('artist', {query: `tag:${tag}`, limit: '100'});
   },
 
   async getReleasesByTag(tag: string) {
-    return fetchMB('release', { query: `tag:${tag}`, limit: '20' });
+    return fetchMB('release', {query: `tag:${tag}`, limit: '20'});
   }
 };

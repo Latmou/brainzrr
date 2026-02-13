@@ -9,8 +9,6 @@ services:
   invidious:
     image: quay.io/invidious/invidious:latest
     restart: unless-stopped
-    ports:
-      - "${INVIDIOUS_PORT:-3010}:3000"
     depends_on:
       invidious-db:
         condition: service_healthy
@@ -70,8 +68,6 @@ services:
   brainzrr-db:
     image: postgres:14-alpine
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: verysecurepassword
@@ -94,8 +90,6 @@ services:
         condition: service_healthy
       musicbrainz-redis:
         condition: service_started
-    ports:
-      - "${MUSICBRAINZ_PORT:-5000}:5000"
     environment:
       - MUSICBRAINZ_WEB_SERVER_HOST=musicbrainz
       - MUSICBRAINZ_WEB_SERVER_PORT=5000
@@ -166,11 +160,17 @@ services:
       musicbrainz-search:
         condition: service_started
     environment:
-      - SIR_DB_HOST=db
-      - SIR_MQ_HOST=mq
-      - SIR_SEARCH_SERVER=search:8983/solr
+      - SIR_CONFIG=/code/config.ini
     volumes:
-      - musicbrainz_indexer_data:/var/lib/sir
+      - ./sir_config.ini:/code/config.ini:ro
+    command: >
+      sh -c "
+        python3 -m sir amqp_setup &&
+        python3 -m sir triggers -t /tmp/triggers.sql -f /tmp/functions.sql &&
+        PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/functions.sql &&
+        PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/triggers.sql &&
+        python3 -m sir amqp_watch
+      "
 
   musicbrainz-search:
     image: metabrainz/mb-solr:4.1.0
@@ -198,14 +198,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
     environment:
       - NODE_ENV=${NODE_ENV:-development}
-      - DATABASE_URL=${DATABASE_URL:-postgresql://root:verysecurepassword@brainzrr-db:5432/brainzrr}
+      - DATABASE_URL=postgresql://root:verysecurepassword@brainzrr-db:5432/brainzrr
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - MUSICBRAINZ_BASE_URL=${MUSICBRAINZ_BASE_URL:-http://musicbrainz:5000}
+      - MUSICBRAINZ_BASE_URL=http://musicbrainz:5000
     command: bun run build && bun run start
     depends_on:
       - invidious

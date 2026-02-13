@@ -182,3 +182,27 @@ export type Release = {
   'label-info'?: LabelInfo[];
   'release-group'?: ReleaseGroup;
 };
+
+export type ArtistSearchResponse = {
+  count: number;
+  offset: number;
+  artists: ArtistDetails[];
+};
+
+export type ReleaseSearchResponse = {
+  count: number;
+  offset: number;
+  releases: Release[];
+};
+
+export type RecordingSearchResponse = {
+  count: number;
+  offset: number;
+  recordings: RecordingDetail[];
+};
+
+export type SearchResults = {
+  artists: ArtistDetails[];
+  releases: Release[];
+  recordings: RecordingDetail[];
+};
