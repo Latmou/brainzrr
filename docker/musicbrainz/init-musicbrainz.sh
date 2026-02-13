@@ -61,7 +61,7 @@ if [ "$DB_INITIALIZED" != "t" ]; then
             # We run this through the indexer container to ensure we have the right environment and config
             # On attend Solr et RabbitMQ avant de libérer le healthcheck de MusicBrainz
             # cela garantit que l'indexer ne démarrera pas trop tôt
-            dockerize -wait "tcp://mq:5672" -wait "tcp://search:8983" -timeout 120s
+            dockerize -wait "tcp://musicbrainz-mq:5672" -wait "tcp://musicbrainz-search:8983" -timeout 120s
             
             # Setup AMQP and triggers
             # On ne lance plus SIR ici car il n'est pas forcément présent dans cette image.

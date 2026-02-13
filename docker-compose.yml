@@ -93,22 +93,18 @@ services:
     environment:
       - MUSICBRAINZ_WEB_SERVER_HOST=musicbrainz
       - MUSICBRAINZ_WEB_SERVER_PORT=5000
-      - MUSICBRAINZ_DB_HOST=db
+      - MUSICBRAINZ_DB_HOST=musicbrainz-db
       - MUSICBRAINZ_DB_PORT=5432
       - MUSICBRAINZ_POSTGRES_USER=musicbrainz
       - MUSICBRAINZ_POSTGRES_PASSWORD=musicbrainz
       - MUSICBRAINZ_POSTGRES_DB=musicbrainz_db
-      - MUSICBRAINZ_POSTGRES_SERVER=db
-      - MUSICBRAINZ_POSTGRES_READONLY_SERVER=db
-      - MUSICBRAINZ_REDIS_HOST=redis
+      - MUSICBRAINZ_POSTGRES_SERVER=musicbrainz-db
+      - MUSICBRAINZ_POSTGRES_READONLY_SERVER=musicbrainz-db
+      - MUSICBRAINZ_REDIS_HOST=musicbrainz-redis
       - MUSICBRAINZ_BASE_URI=http://localhost:${MUSICBRAINZ_PORT:-5000}
       - MUSICBRAINZ_REPLICATION_ACCESS_TOKEN=${MUSICBRAINZ_REPLICATION_ACCESS_TOKEN:-}
       # Replication type 2 = Mirror
       - MUSICBRAINZ_REPLICATION_TYPE=2
-    networks:
-      default:
-        aliases:
-          - musicbrainz
     volumes:
       - musicbrainz_config:/config
       - musicbrainz_dbdump:/media/dbdump
@@ -124,10 +120,6 @@ services:
     image: metabrainz/musicbrainz-docker-db:16-build0
     restart: unless-stopped
     command: postgres -c "shared_buffers=256MB"
-    networks:
-      default:
-        aliases:
-          - db
     volumes:
       - musicbrainz_db_data:/var/lib/postgresql/data
     environment:
@@ -143,10 +135,6 @@ services:
   musicbrainz-redis:
     image: redis:7-alpine
     restart: unless-stopped
-    networks:
-      default:
-        aliases:
-          - redis
 
   musicbrainz-indexer:
     build:
@@ -165,14 +153,16 @@ services:
       - SIR_CONFIG=/code/config.ini
     command: >
       sh -xc "
+        echo 'Checking network resolution...' &&
+        getent hosts musicbrainz-mq || echo 'Cannot resolve musicbrainz-mq' &&
         echo 'Waiting for RabbitMQ...' &&
         sleep 10 &&
         python3 -m sir amqp_setup &&
         echo 'Setting up triggers...' &&
         python3 -m sir triggers -t /tmp/triggers.sql -f /tmp/functions.sql &&
         echo 'Applying SQL files to DB...' &&
-        PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/functions.sql &&
-        PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/triggers.sql &&
+        PGPASSWORD=musicbrainz psql -h musicbrainz-db -U musicbrainz -d musicbrainz_db -f /tmp/functions.sql &&
+        PGPASSWORD=musicbrainz psql -h musicbrainz-db -U musicbrainz -d musicbrainz_db -f /tmp/triggers.sql &&
         echo 'Starting AMQP watch...' &&
         python3 -m sir amqp_watch
       "
@@ -182,10 +172,6 @@ services:
     restart: unless-stopped
     expose:
       - "8983"
-    networks:
-      default:
-        aliases:
-          - search
     volumes:
       - musicbrainz_solr_data:/var/solr
     healthcheck:
@@ -197,10 +183,6 @@ services:
   musicbrainz-mq:
     image: rabbitmq:3-management-alpine
     restart: unless-stopped
-    networks:
-      default:
-        aliases:
-          - mq
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running"]
       interval: 30s
