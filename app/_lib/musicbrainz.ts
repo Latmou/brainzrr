@@ -1,5 +1,5 @@
-import {ArtistDetails, ArtistPageObject, RecordingDetail, Release, ReleaseGroup} from "@/app/_types/MusicBrainz";
-import { prisma } from "@/app/_lib/prisma";
+import {ArtistPageObject, RecordingDetail, Release, ReleaseGroup} from "@/app/_types/MusicBrainz";
+import {prisma} from "@/app/_lib/prisma";
 
 const BASE_URL = process.env.MUSICBRAINZ_BASE_URL || 'https://musicbrainz.org';
 const USER_AGENT = 'brainzrr/0.1.0 ( https://github.com/your-username/brainzrr )';
@@ -57,114 +57,19 @@ export const musicBrainzService = {
   },
 
   async getRelease(mbid: string) {
-    // Check DB cache first
-    try {
-      const cached = await prisma.release.findUnique({
-        where: { id: mbid }
-      });
-      if (cached) {
-        console.log(`[CACHE] Release: ${mbid}`);
-        return cached.data as unknown as Release;
-      }
-    } catch (e) {
-      console.warn(`[CACHE] Error reading Release from DB: ${e}`);
-    }
-
     const release = await fetchMB(`release/${mbid}`, { inc: ['artist-credits', 'recordings', 'labels', 'release-groups'].join('+') });
     release['cover-art-url'] = await musicBrainzService.getReleaseArt(release.id)
-
-    // Save to DB cache
-    try {
-      await prisma.release.upsert({
-        where: { id: mbid },
-        update: {
-          title: release.title,
-          artist: release['artist-credit']?.[0]?.name || 'Unknown',
-          coverArtUrl: release['cover-art-url'],
-          data: release as any
-        },
-        create: {
-          id: mbid,
-          title: release.title,
-          artist: release['artist-credit']?.[0]?.name || 'Unknown',
-          coverArtUrl: release['cover-art-url'],
-          data: release as any
-        }
-      });
-
-      // Also cache all recordings in this release
-      if (release.media) {
-        for (const media of release.media) {
-          if (media.tracks) {
-            for (const track of media.tracks) {
-              if (track.recording) {
-                await prisma.recording.upsert({
-                  where: { mbid: track.recording.id },
-                  update: {
-                    title: track.recording.title,
-                    artist: track.recording['artist-credit']?.[0]?.name || track['artist-credit']?.[0]?.name || release['artist-credit']?.[0]?.name || 'Unknown',
-                    duration: track.recording.length || track.length,
-                    releaseId: mbid,
-                    data: track.recording as any
-                  },
-                  create: {
-                    mbid: track.recording.id,
-                    title: track.recording.title,
-                    artist: track.recording['artist-credit']?.[0]?.name || track['artist-credit']?.[0]?.name || release['artist-credit']?.[0]?.name || 'Unknown',
-                    duration: track.recording.length || track.length,
-                    releaseId: mbid,
-                    data: track.recording as any
-                  }
-                });
-              }
-            }
-          }
-        }
-      }
-
-      console.log(`[CACHE] Saved Release and its recordings: ${mbid}`);
-    } catch (e) {
-      console.warn(`[CACHE] Error saving Release to DB: ${e}`);
-    }
-
     return release as Release;
   },
 
   async getReleaseArt(mbid: string) {
-    // Check DB cache first
-    try {
-      const cached = await prisma.release.findUnique({
-        where: { id: mbid },
-        select: { coverArtUrl: true }
-      });
-      if (cached?.coverArtUrl) {
-        console.log(`[CACHE] Release Art: ${mbid}`);
-        return cached.coverArtUrl;
-      }
-    } catch (e) {
-      console.warn(`[CACHE] Error reading Release Art from DB: ${e}`);
-    }
-
     try {
       const response = await fetch(`https://coverartarchive.org/release/${mbid}`);
       if (response.ok) {
         const data = await response.json();
         const frontImage = data.images.find((img: any) => img.front);
         if (frontImage) {
-          const artUrl = frontImage.thumbnails?.['500'] || frontImage.thumbnails?.large || frontImage.image;
-          
-          // Save art to release in db if it exists
-          try {
-            await prisma.release.update({
-              where: { id: mbid },
-              data: { coverArtUrl: artUrl }
-            });
-            console.log(`[CACHE] Updated cover art for Release: ${mbid}`);
-          } catch (e) {
-            // It's okay if the release doesn't exist in DB yet
-          }
-
-          return artUrl;
+          return frontImage.thumbnails?.['500'] || frontImage.thumbnails?.large || frontImage.image;
         }
       }
     } catch (error) {
@@ -178,63 +83,7 @@ export const musicBrainzService = {
   },
 
   async getRecording(mbid: string) {
-    // Check DB cache first
-    try {
-      const cached = await prisma.recording.findUnique({
-        where: { mbid },
-        include: {
-          release: true
-        }
-      });
-      if (cached) {
-        console.log(`[CACHE] Recording: ${mbid}`);
-        const data = cached.data as unknown as RecordingDetail;
-        const release = {
-          ...cached.release,
-          'cover-art-url': cached.release ? cached.release.coverArtUrl : undefined,
-        };
-        return {
-          ...data,
-          youtubeTitle: cached.youtubeTitle,
-          youtubeUrl: cached.youtubeUrl,
-          releases: [release]
-        };
-      }
-    } catch (e) {
-      console.warn(`[CACHE] Error reading Recording from DB: ${e}`);
-    }
-
-    const recording = (await fetchMB(`recording/${mbid}`,  { inc: ['artist-credits', 'releases'].join('+') }) as RecordingDetail);
-
-    // Ensure we have a releaseId from the fetched data
-    const releaseId = recording.releases?.[0]?.id;
-
-    // Save to DB cache
-    try {
-      await prisma.recording.upsert({
-        where: { mbid },
-        update: {
-          title: recording.title,
-          artist: recording['artist-credit']?.[0]?.name || 'Unknown',
-          duration: recording.length,
-          releaseId: releaseId,
-          data: recording as any
-        },
-        create: {
-          mbid,
-          title: recording.title,
-          artist: recording['artist-credit']?.[0]?.name || 'Unknown',
-          duration: recording.length,
-          releaseId: releaseId,
-          data: recording as any
-        }
-      });
-      console.log(`[CACHE] Saved Recording: ${mbid}`);
-    } catch (e) {
-      console.warn(`[CACHE] Error saving Recording to DB: ${e}`);
-    }
-
-    return recording;
+    return (await fetchMB(`recording/${mbid}`, {inc: ['artist-credits', 'releases'].join('+')}) as RecordingDetail);
   },
 
   async searchArea(query: string) {

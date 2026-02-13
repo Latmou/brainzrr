@@ -12,13 +12,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-import { PlayerProvider } from "@/app/_context/PlayerContext";
-import { Sidebar } from "@/app/_components/Sidebar";
-import { PlayerBar } from "@/app/_components/PlayerBar";
-import { FullScreenPlayer } from "@/app/_components/FullScreenPlayer";
-import { NavHeader } from "@/app/_components/NavHeader";
-import { CacheManager } from "@/app/_components/CacheManager";
 import { SessionProvider } from "next-auth/react"
+import {Sidebar} from "@/app/_components/Sidebar";
+import {NavHeader} from "@/app/_components/NavHeader";
 
 export const metadata: Metadata = {
   title: "Brainzrr",
@@ -42,11 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full flex flex-col`}
       >
         <SessionProvider>
-          <CacheManager />
-          <PlayerProvider>
-            <FullScreenPlayer />
             <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-
               <div className="flex flex-col lg:flex-row flex-1 overflow-hidden min-h-0">
                 <Sidebar className="order-last lg:order-first" />
                 <main className="flex-1 bg-zinc-900 lg:rounded-lg lg:my-2 lg:mr-2 overflow-y-auto relative min-h-0">
@@ -58,9 +50,7 @@ export default function RootLayout({
                 </main>
               </div>
             </div>
-            <PlayerBar className="order-last lg:order-last" />
             <ServiceWorkerRegistration />
-          </PlayerProvider>
         </SessionProvider>
       </body>
     </html>

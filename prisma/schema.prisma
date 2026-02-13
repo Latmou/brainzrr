@@ -18,7 +18,6 @@ model User {
   password      String?
   accounts      Account[]
   sessions      Session[]
-  history       History[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -63,55 +62,4 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model Recording {
-  mbid         String    @id
-  title        String
-  artist       String
-  releaseId    String?
-  duration     Int? // milliseconds
-  youtubeTitle String?
-  youtubeUrl   String?
-  data         Json // Store full MB response
-  addedAt      DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  history      History[]
-
-  release Release? @relation(fields: [releaseId], references: [id])
-}
-
-model Release {
-  id          String   @id
-  title       String
-  artist      String
-  coverArtUrl String?
-  data        Json // Store full MB response
-  addedAt     DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  recordings Recording[]
-}
-
-model Artist {
-  mbid        String   @id
-  name        String
-  imageUrl    String?
-  description String?
-  data        Json // Store full MB response
-  addedAt     DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model History {
-  id          String   @id @default(cuid())
-  userId      String
-  recordingId String
-  playedAt    DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recording Recording @relation(fields: [recordingId], references: [mbid], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([recordingId])
 }

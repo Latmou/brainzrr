@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "bunx prisma generate",
     "prebuild": "bunx prisma migrate deploy && bunx prisma generate",
-    "dev": "next dev",
+    "dev": "next dev --port=3020",
     "build": "next build",
     "start": "next start"
   },
