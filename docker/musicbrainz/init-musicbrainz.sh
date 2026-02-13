@@ -59,22 +59,14 @@ if [ "$DB_INITIALIZED" != "t" ]; then
             
             echo "Initializing search index (Solr)..."
             # We run this through the indexer container to ensure we have the right environment and config
+            # On attend Solr et RabbitMQ avant de libérer le healthcheck de MusicBrainz
+            # cela garantit que l'indexer ne démarrera pas trop tôt
             dockerize -wait "tcp://mq:5672" -wait "tcp://search:8983" -timeout 120s
             
             # Setup AMQP and triggers
-            SIR_CONFIG_PATH="/etc/sir/sir_config.ini"
-            # Check if indexer is available and run setup
-            if command -v python3 > /dev/null && python3 -m sir --help > /dev/null 2>&1; then
-                echo "Running SIR setup locally..."
-                python3 -m sir amqp_setup
-                python3 -m sir triggers -t /tmp/triggers.sql -f /tmp/functions.sql
-                PGPASSWORD="${DB_PASS}" psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_NAME}" -f /tmp/triggers.sql
-                PGPASSWORD="${DB_PASS}" psql -h "${DB_HOST}" -U "${DB_USER}" -d "${DB_NAME}" -f /tmp/functions.sql
-                echo "Re-indexing artists..."
-                python3 -m sir reindex artist
-            else
-                echo "Indexer not available in this container. You may need to run 'docker compose exec musicbrainz-indexer python3 -m sir reindex artist' manually."
-            fi
+            # On ne lance plus SIR ici car il n'est pas forcément présent dans cette image.
+            # C'est le service musicbrainz-indexer qui s'en occupe.
+            echo "Skipping local SIR setup. Indexer container will handle it."
         else
             echo "Import failed. Removing lock and exiting."
             rm /config/importing.lock

@@ -153,20 +153,27 @@ services:
       context: ./docker/musicbrainz-indexer
     restart: unless-stopped
     depends_on:
+      musicbrainz:
+        condition: service_healthy
       musicbrainz-db:
         condition: service_healthy
       musicbrainz-mq:
-        condition: service_started
+        condition: service_healthy
       musicbrainz-search:
-        condition: service_started
+        condition: service_healthy
     environment:
       - SIR_CONFIG=/code/config.ini
     command: >
-      sh -c "
+      sh -xc "
+        echo 'Waiting for RabbitMQ...' &&
+        sleep 10 &&
         python3 -m sir amqp_setup &&
+        echo 'Setting up triggers...' &&
         python3 -m sir triggers -t /tmp/triggers.sql -f /tmp/functions.sql &&
+        echo 'Applying SQL files to DB...' &&
         PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/functions.sql &&
         PGPASSWORD=musicbrainz psql -h db -U musicbrainz -d musicbrainz_db -f /tmp/triggers.sql &&
+        echo 'Starting AMQP watch...' &&
         python3 -m sir amqp_watch
       "
 
@@ -181,6 +188,11 @@ services:
           - search
     volumes:
       - musicbrainz_solr_data:/var/solr
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/admin/info/system || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   musicbrainz-mq:
     image: rabbitmq:3-management-alpine
@@ -189,6 +201,11 @@ services:
       default:
         aliases:
           - mq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   # --- Application Stack ---
   brainzrr:
