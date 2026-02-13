@@ -2,3 +2,6 @@ services:
   brainzrr:
     ports:
       - "${PORT:-3000}:3000"
+  musicbrainz:
+    ports:
+      - "${MUSICBRAINZ_PORT:-5000}:5000"
